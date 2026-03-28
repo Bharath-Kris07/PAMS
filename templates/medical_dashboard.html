@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Medical Dashboard - Haven Flow{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Medical Dashboard</h1>
+        <p class="text-sm text-on-surface-variant mt-1">Track animals requiring immediate medical attention or 6-month follow-ups.</p>
+    </div>
+    <a href="{{ url_for('add_medical_record') }}" class="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dim text-on-primary px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all active:scale-95">
+        <span class="material-symbols-outlined text-sm">monitor_heart</span>
+        Add Treatment
+    </a>
+</div>
+
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+    <div class="px-8 py-5 flex items-center justify-between bg-surface-container-high/50 border-b-0">
+        <h3 class="font-headline font-bold text-[#41608c] flex items-center gap-2">
+            <span class="material-symbols-outlined text-error text-[20px]">notification_important</span> Action Required
+        </h3>
+        <span class="text-xs font-bold text-on-surface-variant">{{ animals|length }} Follow-ups Needed</span>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead>
+                <tr class="bg-surface-container-low">
+                    <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Animal</th>
+                    <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Status</th>
+                    <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Last Treatment</th>
+                    <th class="px-8 py-4 text-right text-xs font-bold text-on-surface-variant uppercase tracking-wider">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y-0 text-sm">
+            {% for animal in animals %}
+                {% set last_record = animal.medical_records[-1] if animal.medical_records else None %}
+                <tr class="hover:bg-surface-container-low transition-colors group">
+                    <td class="px-8 py-5">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[16px] text-on-secondary-container">pets</span>
+                            </div>
+                            <div>
+                                <span class="font-semibold text-on-surface flex items-center gap-1">
+                                    {{ animal.Name }}
+                                    {% if not last_record %}
+                                    <span class="material-symbols-outlined text-error text-[14px]" title="No History">new_releases</span>
+                                    {% endif %}
+                                </span>
+                                <span class="text-xs text-on-surface-variant">ANM-{{ animal.Animal_ID }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-8 py-5">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full {% if animal.Adoption_Status == 'Available' %}bg-secondary-container text-on-secondary-container{% else %}bg-surface-container-high text-on-surface-variant{% endif %} text-[11px] font-bold">
+                            {{ animal.Adoption_Status | upper }}
+                        </span>
+                    </td>
+                    <td class="px-8 py-5">
+                        {% if last_record %}
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-on-surface">{{ last_record.Treatment }}</span>
+                                <span class="text-[11px] font-bold text-on-surface-variant uppercase">{{ last_record.Treatment_Date.strftime('%b %d, %Y') }}</span>
+                            </div>
+                        {% else %}
+                            <span class="text-[11px] font-bold text-error uppercase">No Records Found</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-8 py-5 text-right">
+                        <a href="{{ url_for('animal_profile', id=animal.Animal_ID) }}" class="text-xs font-bold text-primary hover:underline">View History</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" class="px-8 py-10 text-center">
+                        <span class="material-symbols-outlined text-4xl text-outline-variant mb-2">check_circle</span>
+                        <p class="text-sm font-bold text-on-surface mt-1">All Clear</p>
+                        <p class="text-xs text-on-surface-variant">Every animal is up to date on their treatments.</p>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

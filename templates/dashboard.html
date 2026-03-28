@@ -23,6 +23,7 @@
                     <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Name</th>
                     <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Gender</th>
                     <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Breed</th>
+                    <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Species</th>
                     <th class="px-8 py-4 text-right text-xs font-bold text-on-surface-variant uppercase tracking-wider">Action</th>
                 </tr>
             </thead>
@@ -40,13 +41,14 @@
                     </td>
                     <td class="px-8 py-5 text-sm">{{ animal.Gender }}</td>
                     <td class="px-8 py-5 text-sm text-on-surface-variant">{{ animal.breed.Breed_Name if animal.breed else 'Unknown' }}</td>
+                    <td class="px-8 py-5 text-sm text-on-surface-variant">{{ animal.breed.species.Species_Name if animal.breed and animal.breed.species else 'Unknown' }}</td>
                     <td class="px-8 py-5 text-right">
                         <a href="{{ url_for('animal_profile', id=animal.Animal_ID) }}" class="text-xs font-bold text-primary hover:underline">View Profile</a>
                     </td>
                 </tr>
             {% else %}
                 <tr>
-                    <td colspan="5" class="px-8 py-8 text-center text-sm font-medium text-on-surface-variant">
+                    <td colspan="6" class="px-8 py-8 text-center text-sm font-medium text-on-surface-variant">
                         No available animals right now.
                     </td>
                 </tr>

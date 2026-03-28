@@ -69,12 +69,11 @@
             <span class="material-symbols-outlined text-[#41608c]">notifications</span>
             <span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
         </button>
-        <button class="p-2 rounded-full hover:bg-[#eff4f7] transition-colors">
-            <span class="material-symbols-outlined text-[#41608c]">settings</span>
-        </button>
-        <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center ml-2">
-            <span class="text-on-primary-container text-xs font-bold">AS</span>
-        </div>
+        {% if current_staff %}
+        <a href="{{ url_for('profile') }}" class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center ml-2 hover:bg-primary-container/80 transition-colors" title="Staff Profile">
+            <span class="text-on-primary-container text-xs font-bold">{{ current_staff.F_Name[0] }}{{ current_staff.L_Name[0] }}</span>
+        </a>
+        {% endif %}
     </div>
 </nav>
 
@@ -92,9 +91,17 @@
             <span class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
             <span>Add Animal</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-[#41608c] rounded-l-xl shadow-sm translate-x-1' if request.endpoint == 'register_adopter' else 'text-slate-600 hover:text-[#41608c]' }} font-semibold transition-all group" href="{{ url_for('register_adopter') }}">
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-surface-container-lowest text-primary rounded-l-xl shadow-sm translate-x-1' if request.endpoint == 'register_adopter' else 'text-on-surface-variant hover:text-primary' }} font-semibold transition-all group" href="{{ url_for('register_adopter') }}">
             <span class="material-symbols-outlined group-hover:scale-110 transition-transform">person_add</span>
             <span>Register Adopter</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-surface-container-lowest text-primary rounded-l-xl shadow-sm translate-x-1' if 'medical' in request.endpoint else 'text-on-surface-variant hover:text-primary' }} font-semibold transition-all group" href="{{ url_for('medical_dashboard') }}">
+            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">monitor_heart</span>
+            <span>Medical Records</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-surface-container-lowest text-primary rounded-l-xl shadow-sm translate-x-1' if 'revenue' in request.endpoint else 'text-on-surface-variant hover:text-primary' }} font-semibold transition-all group" href="{{ url_for('revenue_dashboard') }}">
+            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">payments</span>
+            <span>Financials</span>
         </a>
     </div>
 </aside>

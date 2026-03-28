@@ -12,10 +12,10 @@
         </nav>
         <h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Animal Profile</h1>
     </div>
-    <button class="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dim text-on-primary px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all active:scale-95">
+    <a href="{{ url_for('add_medical_record', animal_id=animal.Animal_ID) }}" class="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dim text-on-primary px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all active:scale-95">
         <span class="material-symbols-outlined text-sm">monitor_heart</span>
         Add Medical Record
-    </button>
+    </a>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -54,15 +54,15 @@
 
         <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
             <h3 class="font-headline font-bold text-[#41608c] mb-6">Medical History</h3>
-            <div class="relative pl-6 space-y-8">
-                <div class="absolute left-[7px] top-2 bottom-2 w-px bg-outline-variant/20"></div>
+            <div class="relative pl-6 space-y-6">
+                <div class="absolute left-[7px] top-2 bottom-2 w-px bg-outline-variant/15"></div>
                 
                 {% for record in animal.medical_records %}
                 <div class="relative">
-                    <div class="absolute -left-[23px] top-1 w-3.5 h-3.5 rounded-full {% if loop.first %}bg-primary{% else %}bg-surface-container-high{% endif %} border-4 border-white"></div>
-                    <div class="space-y-1">
-                        <p class="text-[11px] font-bold text-on-surface-variant uppercase">{{ record.Treatment_Date.strftime('%b %d, %Y') if record.Treatment_Date else 'Date Unknown' }}</p>
-                        <p class="text-sm font-semibold">{{ record.Treatment }}</p>
+                    <div class="absolute -left-[23px] top-4 w-3.5 h-3.5 rounded-full {% if loop.first %}bg-primary{% else %}bg-primary/30{% endif %} border-2 border-surface-container-lowest"></div>
+                    <div class="space-y-1 bg-surface-container-low p-4 rounded-lg">
+                        <p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">{{ record.Treatment_Date.strftime('%b %d, %Y') if record.Treatment_Date else 'Date Unknown' }}</p>
+                        <h4 class="text-sm font-bold font-headline text-on-surface">{{ record.Treatment }}</h4>
                         <p class="text-xs text-on-surface-variant leading-relaxed">{{ record.Notes }}</p>
                     </div>
                 </div>

@@ -1,8 +1,9 @@
 import locale
 import re
-from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash
+from datetime import datetime, timedelta
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
 # The exact DB URI required by the user
@@ -11,6 +12,19 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'haven_flow_secret' # Needed for flash messages
 
 db = SQLAlchemy(app)
+
+@app.before_request
+def require_login():
+    allowed_routes = ['login', 'static']
+    if request.endpoint and request.endpoint not in allowed_routes and 'staff_id' not in session:
+        return redirect(url_for('login'))
+
+@app.context_processor
+def inject_staff():
+    if 'staff_id' in session:
+        staff = Staff.query.get(session['staff_id'])
+        return dict(current_staff=staff)
+    return dict(current_staff=None)
 
 # =======================
 # JINJA2 CUSTOM FILTERS
@@ -137,10 +151,106 @@ def dashboard():
     """Main dashboard showing available animals"""
     try:
         # We perform a try block so it won't crash if DB isn't running in our sandbox
-        available_animals = Animal.query.filter_by(Adoption_Status='Available').all()
+        available_animals = Animal.query.options(joinedload(Animal.breed).joinedload(Breed.species)).filter_by(Adoption_Status='Available').all()
     except Exception:
         available_animals = []
     return render_template('dashboard.html', animals=available_animals)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        staff_id = request.form.get('staff_id')
+        try:
+            staff_id = int(staff_id)
+            staff = Staff.query.get(staff_id)
+            if staff:
+                session['staff_id'] = staff.Staff_ID
+                flash(f"Welcome back, {staff.F_Name}!", "success")
+                return redirect(url_for('dashboard'))
+            else:
+                flash("Invalid Staff ID.", "error")
+        except (ValueError, TypeError):
+            flash("Staff ID must be a number.", "error")
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('staff_id', None)
+    flash("You have been logged out.", "success")
+    return redirect(url_for('login'))
+
+@app.route('/profile')
+def profile():
+    return render_template('staff_profile.html')
+
+@app.route('/medical/dashboard')
+def medical_dashboard():
+    # Identify animals whose latest treatment is > 180 days ago, or who have no treatments.
+    thresh_date = datetime.now().date() - timedelta(days=180)
+    
+    # Subquery for latest treatment date
+    subq = db.session.query(
+        MedicalRecord.Animal_ID,
+        db.func.max(MedicalRecord.Treatment_Date).label('last_treatment')
+    ).group_by(MedicalRecord.Animal_ID).subquery()
+    
+    animals_needing_followup = db.session.query(Animal).outerjoin(
+        subq, Animal.Animal_ID == subq.c.Animal_ID
+    ).filter(
+        db.or_(
+            subq.c.last_treatment == None,
+            subq.c.last_treatment < thresh_date
+        )
+    ).all()
+    
+    return render_template('medical_dashboard.html', animals=animals_needing_followup)
+
+@app.route('/medical/add', methods=['GET', 'POST'])
+def add_medical_record():
+    if request.method == 'POST':
+        animal_id = request.form.get('animal_id')
+        treatment = request.form.get('treatment')
+        treatment_date = request.form.get('treatment_date')
+        notes = request.form.get('notes')
+        
+        try:
+            new_record = MedicalRecord(
+                Animal_ID=int(animal_id),
+                Treatment=treatment,
+                Treatment_Date=datetime.strptime(treatment_date, '%Y-%m-%d').date() if treatment_date else None,
+                Notes=notes,
+                Staff_ID=session.get('staff_id')
+            )
+            db.session.add(new_record)
+            db.session.commit()
+            flash('Medical record added successfully.', 'success')
+            return redirect(url_for('animal_profile', id=animal_id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding record: {str(e)}', 'error')
+            
+    animals = Animal.query.all()
+    return render_template('add_medical_record.html', animals=animals)
+
+@app.route('/analytics/revenue')
+def revenue_dashboard():
+    total_revenue = db.session.query(db.func.sum(Payment.Amount)).scalar() or 0
+    
+    # Pending Dues: Adoption Fee > sum of payments
+    pending_dues = db.session.query(
+        Adoption,
+        db.func.coalesce(db.func.sum(Payment.Amount), 0).label('paid_amount')
+    ).outerjoin(Payment, Adoption.Adoption_ID == Payment.Adoption_ID)\
+     .group_by(Adoption.Adoption_ID)\
+     .having(db.func.coalesce(db.func.sum(Payment.Amount), 0) < Adoption.Fee)\
+     .all()
+
+    recent_payments = Payment.query.order_by(Payment.Payment_Date.desc()).limit(10).all()
+     
+    return render_template('revenue_dashboard.html', 
+                          total_revenue=total_revenue, 
+                          pending_dues=pending_dues, 
+                          recent_payments=recent_payments)
 
 @app.route('/animal/add', methods=['GET', 'POST'])
 def add_animal():

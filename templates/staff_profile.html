@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Profile - Haven Flow{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Staff Profile</h1>
+        <p class="text-sm text-on-surface-variant mt-1">View your staff details and manage session.</p>
+    </div>
+</div>
+
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm max-w-3xl">
+    <div class="px-8 py-6 flex flex-col gap-6">
+        
+        <div class="flex items-center gap-6">
+            <div class="w-20 h-20 rounded-full bg-primary-container flex items-center justify-center">
+                <span class="text-on-primary-container text-2xl font-bold">
+                    {{ current_staff.F_Name[0] }}{{ current_staff.L_Name[0] }}
+                </span>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold font-headline text-on-surface">{{ current_staff.F_Name }} {{ current_staff.L_Name }}</h2>
+                <p class="text-sm font-medium text-on-surface-variant">Role ID: {{ current_staff.Role_ID }}</p>
+            </div>
+        </div>
+
+        <div class="border-t border-surface-container pt-6">
+            <a href="{{ url_for('logout') }}" class="inline-flex items-center justify-center px-6 py-2.5 bg-error/10 text-error font-bold rounded-lg hover:bg-error/20 transition-colors">
+                <span class="material-symbols-outlined mr-2 text-[20px]">logout</span>
+                Logout
+            </a>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}
