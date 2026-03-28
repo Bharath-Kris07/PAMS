@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>{% block title %}Haven Flow{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "error": "#a83836",
+                        "surface": "#f7fafc",
+                        "surface-container-low": "#eff4f7",
+                        "outline-variant": "#aab3b7",
+                        "on-surface-variant": "#586064",
+                        "on-background": "#2b3437",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#41608c",
+                        "surface-container-high": "#e2e9ed",
+                        "primary-container": "#a6c5f7",
+                        "on-surface": "#2b3437",
+                        "on-error-container": "#6e0a12",
+                        "on-secondary-container": "#395663",
+                        "secondary": "#466370",
+                        "on-primary": "#f8f8ff",
+                        "surface-container": "#e8eff2",
+                        "primary-dim": "#35547f",
+                        "on-secondary-fixed": "#264350",
+                        "secondary-container": "#c9e7f7",
+                        "on-primary-container": "#1d3f69",
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#f7fafc]/80 backdrop-blur-md shadow-sm flex items-center justify-between px-6 py-3">
+    <div class="flex items-center gap-8 flex-1">
+        <a href="{{ url_for('dashboard') }}" class="text-xl font-bold tracking-tight text-[#41608c] font-headline">Haven Flow</a>
+        <div class="relative w-full max-w-md ml-4">
+            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <span class="material-symbols-outlined text-outline text-sm">search</span>
+            </div>
+            <input class="block w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all placeholder:text-on-surface-variant/60" placeholder="Search by Adopter_ID..." type="text"/>
+        </div>
+    </div>
+    <div class="flex items-center gap-4">
+        <button class="p-2 rounded-full hover:bg-[#eff4f7] transition-colors relative">
+            <span class="material-symbols-outlined text-[#41608c]">notifications</span>
+            <span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+        </button>
+        <button class="p-2 rounded-full hover:bg-[#eff4f7] transition-colors">
+            <span class="material-symbols-outlined text-[#41608c]">settings</span>
+        </button>
+        <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center ml-2">
+            <span class="text-on-primary-container text-xs font-bold">AS</span>
+        </div>
+    </div>
+</nav>
+
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-[#eff4f7] py-8 pl-4 z-40">
+    <div class="mb-10 px-4 mt-8">
+        <p class="text-xs text-on-surface-variant font-medium">Pet Management</p>
+    </div>
+    <div class="flex-1 space-y-2">
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-[#41608c] rounded-l-xl shadow-sm translate-x-1' if request.endpoint == 'dashboard' else 'text-slate-600 hover:text-[#41608c]' }} font-semibold transition-all group" href="{{ url_for('dashboard') }}">
+            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">dashboard</span>
+            <span>Dashboard</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-[#41608c] rounded-l-xl shadow-sm translate-x-1' if request.endpoint == 'add_animal' else 'text-slate-600 hover:text-[#41608c]' }} font-semibold transition-all group" href="{{ url_for('add_animal') }}">
+            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
+            <span>Add Animal</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-[#41608c] rounded-l-xl shadow-sm translate-x-1' if request.endpoint == 'register_adopter' else 'text-slate-600 hover:text-[#41608c]' }} font-semibold transition-all group" href="{{ url_for('register_adopter') }}">
+            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">person_add</span>
+            <span>Register Adopter</span>
+        </a>
+    </div>
+</aside>
+
+<!-- Main Content Canvas -->
+<main class="md:ml-64 pt-20 px-6 pb-12 min-h-screen">
+    <div class="mb-6">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="p-4 mb-4 text-sm rounded-lg {% if category == 'success' %}bg-secondary-container text-on-secondary-container{% else %}bg-error/10 text-error{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    {% block content %}
+    {% endblock %}
+</main>
+
+</body>
+</html>

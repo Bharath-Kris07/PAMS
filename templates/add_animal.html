@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Add Animal - Haven Flow{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Add New Animal</h1>
+        <p class="text-sm text-on-surface-variant mt-1">Register a new pet into the system.</p>
+    </div>
+</div>
+
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
+    <form action="{{ url_for('add_animal') }}" method="POST" class="space-y-6 max-w-2xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-1">
+                <label for="name" class="text-sm font-semibold text-on-surface-variant">Name *</label>
+                <input type="text" id="name" name="name" required
+                       class="block w-full px-4 py-2 bg-surface-container-low border border-transparent rounded-lg text-sm focus:border-outline-variant/50 focus:ring-primary/10 transition-all text-on-surface">
+            </div>
+            <div class="space-y-1">
+                <label for="gender" class="text-sm font-semibold text-on-surface-variant">Gender</label>
+                <select id="gender" name="gender" class="block w-full px-4 py-2 bg-surface-container-low border border-transparent rounded-lg text-sm focus:border-outline-variant/50 focus:ring-primary/10 transition-all text-on-surface">
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Unknown">Unknown</option>
+                </select>
+            </div>
+            
+            <div class="space-y-1">
+                <label for="dob" class="text-sm font-semibold text-on-surface-variant">Date of Birth</label>
+                <input type="date" id="dob" name="dob"
+                       class="block w-full px-4 py-2 bg-surface-container-low border border-transparent rounded-lg text-sm focus:border-outline-variant/50 focus:ring-primary/10 transition-all text-on-surface">
+            </div>
+
+            <div class="space-y-1">
+                <label for="breed_id" class="text-sm font-semibold text-on-surface-variant">Breed</label>
+                <select id="breed_id" name="breed_id" class="block w-full px-4 py-2 bg-surface-container-low border border-transparent rounded-lg text-sm focus:border-outline-variant/50 focus:ring-primary/10 transition-all text-on-surface">
+                    <option value="">Select Breed</option>
+                    {% for breed in breeds %}
+                        <option value="{{ breed.Breed_ID }}">{{ breed.Breed_Name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <div class="pt-6 border-t border-surface-container-low flex justify-end">
+            <button type="submit" class="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dim text-on-primary px-6 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all active:scale-95">
+                <span class="material-symbols-outlined text-sm">save</span>
+                Save Animal
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Haven Flow{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Dashboard Overview</h1>
+        <p class="text-sm text-on-surface-variant mt-1">Manage animals and daily operations efficiently.</p>
+    </div>
+</div>
+
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+    <div class="px-8 py-5 flex items-center justify-between bg-surface-container-high/50">
+        <h3 class="font-headline font-bold text-[#41608c]">Available Animals</h3>
+        <span class="text-xs font-bold text-on-surface-variant">{{ animals|length }} Available</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full border-collapse">
+            <thead>
+                <tr class="bg-surface-container-low">
+                    <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Animal ID</th>
+                    <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Name</th>
+                    <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Gender</th>
+                    <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Breed</th>
+                    <th class="px-8 py-4 text-right text-xs font-bold text-on-surface-variant uppercase tracking-wider">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-container-low">
+            {% for animal in animals %}
+                <tr class="hover:bg-surface-container-low transition-colors group">
+                    <td class="px-8 py-5 text-sm font-mono text-on-surface-variant">ANM-{{ animal.Animal_ID }}</td>
+                    <td class="px-8 py-5">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[14px] text-on-secondary-container">pets</span>
+                            </div>
+                            <span class="text-sm font-semibold text-on-surface">{{ animal.Name }}</span>
+                        </div>
+                    </td>
+                    <td class="px-8 py-5 text-sm">{{ animal.Gender }}</td>
+                    <td class="px-8 py-5 text-sm text-on-surface-variant">{{ animal.breed.Breed_Name if animal.breed else 'Unknown' }}</td>
+                    <td class="px-8 py-5 text-right">
+                        <a href="{{ url_for('animal_profile', id=animal.Animal_ID) }}" class="text-xs font-bold text-primary hover:underline">View Profile</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" class="px-8 py-8 text-center text-sm font-medium text-on-surface-variant">
+                        No available animals right now.
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

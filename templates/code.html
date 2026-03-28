@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Adopter Profile - Haven Flow</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-dim": "#584d76",
+              "error": "#a83836",
+              "surface": "#f7fafc",
+              "on-tertiary-fixed-variant": "#554a73",
+              "surface-container-low": "#eff4f7",
+              "outline-variant": "#aab3b7",
+              "tertiary-container": "#d9cafb",
+              "primary-fixed-dim": "#99b8e8",
+              "on-surface-variant": "#586064",
+              "on-primary-fixed-variant": "#284872",
+              "surface-dim": "#d2dbe0",
+              "on-background": "#2b3437",
+              "on-tertiary-container": "#4c4169",
+              "inverse-on-surface": "#9a9d9f",
+              "surface-tint": "#41608c",
+              "surface-variant": "#dbe4e8",
+              "surface-container-lowest": "#ffffff",
+              "error-container": "#fa746f",
+              "primary": "#41608c",
+              "on-secondary-fixed-variant": "#435f6d",
+              "secondary-dim": "#3a5764",
+              "surface-container-high": "#e2e9ed",
+              "on-error": "#fff7f6",
+              "secondary-fixed-dim": "#bbd9e9",
+              "primary-container": "#a6c5f7",
+              "secondary-fixed": "#c9e7f7",
+              "on-surface": "#2b3437",
+              "on-error-container": "#6e0a12",
+              "error-dim": "#67040d",
+              "surface-bright": "#f7fafc",
+              "on-secondary-container": "#395663",
+              "secondary": "#466370",
+              "outline": "#737c80",
+              "on-primary": "#f8f8ff",
+              "inverse-primary": "#a6c5f7",
+              "surface-container": "#e8eff2",
+              "on-secondary": "#f3faff",
+              "primary-dim": "#35547f",
+              "on-tertiary": "#fdf7ff",
+              "on-secondary-fixed": "#264350",
+              "surface-container-highest": "#dbe4e8",
+              "tertiary-fixed-dim": "#cbbced",
+              "secondary-container": "#c9e7f7",
+              "on-primary-fixed": "#002a53",
+              "inverse-surface": "#0b0f10",
+              "background": "#f7fafc",
+              "on-primary-container": "#1d3f69",
+              "tertiary": "#645983",
+              "tertiary-fixed": "#d9cafb",
+              "on-tertiary-fixed": "#382e55",
+              "primary-fixed": "#a6c5f7"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#f7fafc]/80 backdrop-blur-md shadow-sm flex items-center justify-between px-6 py-3 w-full">
+<div class="flex items-center gap-8 flex-1">
+<span class="text-xl font-bold tracking-tight text-[#41608c] font-headline">Haven Flow</span>
+<div class="relative w-full max-w-md ml-4">
+<div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline text-sm">search</span>
+</div>
+<input class="block w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all placeholder:text-on-surface-variant/60" placeholder="Search by Adopter_ID..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-[#eff4f7] transition-colors relative">
+<span class="material-symbols-outlined text-[#41608c]">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 rounded-full hover:bg-[#eff4f7] transition-colors">
+<span class="material-symbols-outlined text-[#41608c]">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center ml-2">
+<span class="text-on-primary-container text-xs font-bold">AS</span>
+</div>
+</div>
+</nav>
+<!-- SideNavBar (Hidden on Mobile) -->
+<aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-[#eff4f7] py-8 pl-4 z-40">
+<div class="mb-10 px-4">
+<h2 class="text-lg font-black text-[#41608c] font-headline">Haven Flow</h2>
+<p class="text-xs text-on-surface-variant font-medium">Pet Management</p>
+</div>
+<div class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-[#41608c] font-semibold transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-[#41608c] font-semibold transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
+<span>Add Animal</span>
+</a>
+<!-- Active State -->
+<div class="bg-white text-[#41608c] rounded-l-xl shadow-sm flex items-center gap-3 px-4 py-3 font-semibold translate-x-1 duration-300">
+<span class="material-symbols-outlined">person_add</span>
+<span>Register Adopter</span>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-[#41608c] font-semibold transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">medical_services</span>
+<span>Medical Records</span>
+</a>
+</div>
+<div class="mt-auto space-y-2 pb-4">
+<button class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-[#41608c] font-semibold transition-all">
+<span class="material-symbols-outlined">help</span>
+<span>Help</span>
+</button>
+<button class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-[#41608c] font-semibold transition-all">
+<span class="material-symbols-outlined">logout</span>
+<span>Logout</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 pt-20 px-6 pb-12 min-h-screen">
+<!-- Breadcrumb & Header Action -->
+<div class="flex items-center justify-between mb-8">
+<div>
+<nav class="flex items-center gap-2 text-xs text-on-surface-variant mb-2">
+<span class="hover:text-primary cursor-pointer">Adopter Directory</span>
+<span class="material-symbols-outlined text-[10px]">chevron_right</span>
+<span class="text-primary font-semibold">Ananya Sharma</span>
+</nav>
+<h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Adopter Profile</h1>
+</div>
+<button class="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dim text-on-primary px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all active:scale-95">
+<span class="material-symbols-outlined text-sm">edit</span>
+                Edit Profile
+            </button>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Core Profile Card (Span 2) -->
+<div class="lg:col-span-2 space-y-6">
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm transition-all border-l-4 border-primary">
+<div class="flex flex-col md:flex-row justify-between gap-6">
+<div class="space-y-4">
+<div>
+<span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Primary Contact</span>
+<h2 class="text-3xl font-extrabold text-[#41608c] font-headline mt-1">Ananya Sharma</h2>
+<p class="text-primary-dim font-medium text-sm flex items-center gap-1.5 mt-1">
+<span class="material-symbols-outlined text-base">id_card</span>
+                                    AD-2023-552
+                                </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 pt-4">
+<div class="space-y-1">
+<label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Email Address</label>
+<p class="text-on-surface font-medium">ananya.sharma@email.in</p>
+</div>
+<div class="space-y-1">
+<label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Verification Status</label>
+<div class="flex">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[11px] font-bold">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+                                            ID VERIFIED
+                                        </span>
+</div>
+</div>
+<div class="space-y-1 md:col-span-2">
+<label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Residential Address</label>
+<p class="text-on-surface leading-relaxed max-w-md">
+                                        Apt 402, Skyview Residency, Koramangala, Bengaluru, Karnataka 560034
+                                    </p>
+</div>
+</div>
+</div>
+<!-- Right Accent: Mini Map Placeholder -->
+<div class="w-full md:w-48 h-48 rounded-xl bg-surface-container-low overflow-hidden relative group">
+<div class="absolute inset-0 bg-primary/5 group-hover:bg-primary/0 transition-colors z-10"></div>
+<img class="w-full h-full object-cover" data-alt="stylized map view of Koramangala Bengaluru neighborhood with soft pastel blue and grey tones professional UI map" data-location="Bengaluru" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4CiKykcPiKHbSZlyMTts9BxVVAJxssurMkxKgECb97qMEimiVq7QIXF2St_Hbxww1EFZLjdmf0cwaDyoVzeej6A13SuEP43Apk28aoj0azfKU_iFM1TU518YYUhnsU4hji16ivYHKOrSWZht5CrU_ww6ctC-nMsQUANHDLhUM4sArS6dUDuYLCgc8fShqCGAIQv4Sp0nmxK--pAg1DbWkZWgp_g5xVbY6AhtpErr_IJlte2vzVo0tkx6KO0VGj92JRRf-8dfMaDg"/>
+<div class="absolute bottom-3 left-3 z-20 flex items-center gap-1 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-primary">
+<span class="material-symbols-outlined text-[12px]">location_on</span>
+                                KARNATAKA, IN
+                            </div>
+</div>
+</div>
+</div>
+<!-- Adoption History Table -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+<div class="px-8 py-5 flex items-center justify-between bg-surface-container-high/50">
+<h3 class="font-headline font-bold text-[#41608c]">Adoption History</h3>
+<span class="text-xs font-bold text-on-surface-variant">1 Record Found</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full border-collapse">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Adoption_Date</th>
+<th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Animal_ID</th>
+<th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Animal Name</th>
+<th class="px-8 py-4 text-right text-xs font-bold text-on-surface-variant uppercase tracking-wider">Adoption Fee</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<div class="w-1 h-8 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity absolute left-0"></div>
+<span class="text-sm font-medium text-on-surface">2023-11-20</span>
+</div>
+</td>
+<td class="px-8 py-5 text-sm font-mono text-on-surface-variant">ANM-2023-0842</td>
+<td class="px-8 py-5">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-on-secondary-container">pets</span>
+</div>
+<span class="text-sm font-semibold text-on-surface">Luna</span>
+</div>
+</td>
+<td class="px-8 py-5 text-right font-bold text-primary">₹20,000</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 bg-surface-container-low/30 border-t border-surface-container">
+<button class="w-full text-center text-xs font-bold text-[#41608c] hover:underline">View All Historical Records</button>
+</div>
+</div>
+</div>
+<!-- Sidebar Widgets -->
+<div class="space-y-6">
+<!-- Payment Summary Widget -->
+<div class="bg-gradient-to-br from-[#41608c] to-[#35547f] rounded-xl p-6 text-on-primary shadow-lg relative overflow-hidden">
+<div class="relative z-10">
+<div class="flex items-center justify-between mb-8">
+<span class="material-symbols-outlined text-3xl opacity-50">payments</span>
+<span class="text-[10px] font-bold tracking-widest uppercase bg-white/20 px-2 py-1 rounded-lg">Financial Summary</span>
+</div>
+<p class="text-sm font-medium opacity-80 mb-1">Total Contributions</p>
+<h4 class="text-4xl font-black font-headline tracking-tighter">₹20,000</h4>
+<div class="mt-6 flex items-center gap-2 text-xs font-medium bg-black/10 w-fit px-3 py-1.5 rounded-full">
+<span class="w-2 h-2 rounded-full bg-secondary-fixed"></span>
+                            All payments settled
+                        </div>
+</div>
+<!-- Decorative background shapes -->
+<div class="absolute -right-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+<div class="absolute -left-4 -top-4 w-24 h-24 bg-primary-container/10 rounded-full blur-xl"></div>
+</div>
+<!-- Contact Info Section -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+<h3 class="font-headline font-bold text-[#41608c] mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">call</span>
+                        Contact Directory
+                    </h3>
+<div class="space-y-5">
+<div class="flex items-start gap-4 p-3 rounded-lg hover:bg-surface-container-low transition-colors">
+<div class="bg-primary/10 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary text-xl">smartphone</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Primary Mobile</p>
+<p class="text-base font-bold text-on-surface">+91 98765 43210</p>
+<span class="text-[10px] text-on-surface-variant font-medium">Verified • Active</span>
+</div>
+</div>
+<div class="flex items-start gap-4 p-3 rounded-lg hover:bg-surface-container-low transition-colors">
+<div class="bg-surface-container-high p-2 rounded-lg">
+<span class="material-symbols-outlined text-on-surface-variant text-xl">phone_in_talk</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Secondary / Landline</p>
+<p class="text-base font-bold text-on-surface">+91 80 2345 6789</p>
+<span class="text-[10px] text-on-surface-variant font-medium">Home Office</span>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-surface-container-low">
+<button class="w-full flex items-center justify-center gap-2 text-sm font-bold text-primary py-2 hover:bg-primary/5 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-base">add</span>
+                            Add Contact Method
+                        </button>
+</div>
+</div>
+<!-- Animal Timeline Excerpt -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+<h3 class="font-headline font-bold text-[#41608c] mb-6">Interaction Timeline</h3>
+<div class="relative pl-6 space-y-8">
+<!-- Vertical Thread Line -->
+<div class="absolute left-[7px] top-2 bottom-2 w-px bg-outline-variant/20"></div>
+<!-- Event 1 -->
+<div class="relative">
+<div class="absolute -left-[23px] top-1 w-3.5 h-3.5 rounded-full bg-primary border-4 border-white"></div>
+<div class="space-y-1">
+<p class="text-[11px] font-bold text-on-surface-variant uppercase">Nov 20, 2023</p>
+<p class="text-sm font-semibold">Adoption Finalized: Luna</p>
+<p class="text-xs text-on-surface-variant leading-relaxed">Legal documents signed and fee of ₹20,000 processed.</p>
+</div>
+</div>
+<!-- Event 2 -->
+<div class="relative">
+<div class="absolute -left-[23px] top-1 w-3.5 h-3.5 rounded-full bg-primary-fixed border-4 border-white"></div>
+<div class="space-y-1">
+<p class="text-[11px] font-bold text-on-surface-variant uppercase">Nov 15, 2023</p>
+<p class="text-sm font-semibold">Home Inspection Completed</p>
+<p class="text-xs text-on-surface-variant leading-relaxed">Residential premises approved for pet accommodation.</p>
+</div>
+</div>
+<!-- Event 3 -->
+<div class="relative">
+<div class="absolute -left-[23px] top-1 w-3.5 h-3.5 rounded-full bg-surface-container-high border-4 border-white"></div>
+<div class="space-y-1">
+<p class="text-[11px] font-bold text-on-surface-variant uppercase">Nov 10, 2023</p>
+<p class="text-sm font-semibold">Application Submitted</p>
+<p class="text-xs text-on-surface-variant leading-relaxed">Interested in adopting Luna (Shih Tzu Mix).</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

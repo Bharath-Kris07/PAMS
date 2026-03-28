@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Register Adopter - Haven Flow{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Register New Adopter</h1>
+        <p class="text-sm text-on-surface-variant mt-1">Add a potential adopter's details to the directory.</p>
+    </div>
+</div>
+
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
+    <form action="{{ url_for('register_adopter') }}" method="POST" class="space-y-6 max-w-2xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-1">
+                <label for="f_name" class="text-sm font-semibold text-on-surface-variant">First Name *</label>
+                <input type="text" id="f_name" name="f_name" required
+                       class="block w-full px-4 py-2 bg-surface-container-low border border-transparent rounded-lg text-sm focus:border-outline-variant/50 focus:ring-primary/10 transition-all text-on-surface">
+            </div>
+            <div class="space-y-1">
+                <label for="l_name" class="text-sm font-semibold text-on-surface-variant">Last Name *</label>
+                <input type="text" id="l_name" name="l_name" required
+                       class="block w-full px-4 py-2 bg-surface-container-low border border-transparent rounded-lg text-sm focus:border-outline-variant/50 focus:ring-primary/10 transition-all text-on-surface">
+            </div>
+            
+            <div class="space-y-1 md:col-span-2">
+                <label for="email" class="text-sm font-semibold text-on-surface-variant">Email Address *</label>
+                <input type="email" id="email" name="email" required placeholder="name@example.com"
+                       class="block w-full px-4 py-2 bg-surface-container-low border border-transparent rounded-lg text-sm focus:border-outline-variant/50 focus:ring-primary/10 transition-all text-on-surface">
+            </div>
+
+            <div class="space-y-1 md:col-span-2">
+                <label for="phone" class="text-sm font-semibold text-on-surface-variant">Primary Phone (e.g. 9876543210)</label>
+                <input type="tel" id="phone" name="phone" pattern="[0-9]{10}" placeholder="10-digit mobile"
+                       class="block w-full px-4 py-2 bg-surface-container-low border border-transparent rounded-lg text-sm focus:border-outline-variant/50 focus:ring-primary/10 transition-all text-on-surface">
+            </div>
+
+            <div class="space-y-1 md:col-span-2">
+                <label for="address" class="text-sm font-semibold text-on-surface-variant">Residential Address</label>
+                <textarea id="address" name="address" rows="3"
+                          class="block w-full px-4 py-2 bg-surface-container-low border border-transparent rounded-lg text-sm focus:border-outline-variant/50 focus:ring-primary/10 transition-all text-on-surface"></textarea>
+            </div>
+        </div>
+        
+        <div class="pt-6 border-t border-surface-container-low flex justify-end">
+            <button type="submit" class="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dim text-on-primary px-6 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all active:scale-95">
+                <span class="material-symbols-outlined text-sm">person_add</span>
+                Register Adopter
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

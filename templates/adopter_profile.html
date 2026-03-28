@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Adopter Profile - Haven Flow{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb & Header Action -->
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <nav class="flex items-center gap-2 text-xs text-on-surface-variant mb-2">
+            <a href="{{ url_for('dashboard') }}" class="hover:text-primary cursor-pointer">Adopter Directory</a>
+            <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+            <span class="text-primary font-semibold">{{ adopter.F_Name }} {{ adopter.L_Name }}</span>
+        </nav>
+        <h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Adopter Profile</h1>
+    </div>
+    <button class="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dim text-on-primary px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all active:scale-95">
+        <span class="material-symbols-outlined text-sm">edit</span>
+        Edit Profile
+    </button>
+</div>
+
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Core Profile Card (Span 2) -->
+    <div class="lg:col-span-2 space-y-6">
+        <div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm transition-all border-l-4 border-primary">
+            <div class="flex flex-col md:flex-row justify-between gap-6">
+                <div class="space-y-4 flex-1">
+                    <div>
+                        <span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Primary Contact</span>
+                        <h2 class="text-3xl font-extrabold text-[#41608c] font-headline mt-1">{{ adopter.F_Name }} {{ adopter.L_Name }}</h2>
+                        <p class="text-primary-dim font-medium text-sm flex items-center gap-1.5 mt-1">
+                            <span class="material-symbols-outlined text-base">id_card</span>
+                            AD-{{ adopter.Adopter_ID }}
+                        </p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 pt-4">
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Email Address</label>
+                            <p class="text-on-surface font-medium">{{ adopter.Email }}</p>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Verification Status</label>
+                            <div class="flex">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[11px] font-bold">
+                                    <span class="material-symbols-outlined text-[14px]">verified</span>
+                                    ID VERIFIED
+                                </span>
+                            </div>
+                        </div>
+                        <div class="space-y-1 md:col-span-2">
+                            <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Residential Address</label>
+                            <p class="text-on-surface leading-relaxed max-w-md">
+                                {{ adopter.Address or 'No address provided.' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Accent: Mini Map Placeholder -->
+                <div class="w-full md:w-48 h-48 rounded-xl bg-surface-container-low overflow-hidden relative group shrink-0">
+                    <div class="absolute inset-0 bg-primary/5 group-hover:bg-primary/0 transition-colors z-10"></div>
+                    <img class="w-full h-full object-cover" alt="stylized map" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4CiKykcPiKHbSZlyMTts9BxVVAJxssurMkxKgECb97qMEimiVq7QIXF2St_Hbxww1EFZLjdmf0cwaDyoVzeej6A13SuEP43Apk28aoj0azfKU_iFM1TU518YYUhnsU4hji16ivYHKOrSWZht5CrU_ww6ctC-nMsQUANHDLhUM4sArS6dUDuYLCgc8fShqCGAIQv4Sp0nmxK--pAg1DbWkZWgp_g5xVbY6AhtpErr_IJlte2vzVo0tkx6KO0VGj92JRRf-8dfMaDg"/>
+                    <div class="absolute bottom-3 left-3 z-20 flex items-center gap-1 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-primary">
+                        <span class="material-symbols-outlined text-[12px]">location_on</span>
+                        ADDRESS LOGGED
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Adoption History Table -->
+        <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+            <div class="px-8 py-5 flex items-center justify-between bg-surface-container-high/50">
+                <h3 class="font-headline font-bold text-[#41608c]">Adoption History</h3>
+                <span class="text-xs font-bold text-on-surface-variant">{{ adopter.adoptions|length }} Records Found</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-surface-container-low">
+                            <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Date</th>
+                            <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Animal ID</th>
+                            <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Animal Name</th>
+                            <th class="px-8 py-4 text-right text-xs font-bold text-on-surface-variant uppercase tracking-wider">Fee</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-surface-container-low">
+                        {% for adoption in adopter.adoptions %}
+                        <tr class="hover:bg-surface-container-low transition-colors group">
+                            <td class="px-8 py-5">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-1 h-8 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity absolute left-0"></div>
+                                    <span class="text-sm font-medium text-on-surface">{{ adoption.Adoption_Date.strftime('%Y-%m-%d') }}</span>
+                                </div>
+                            </td>
+                            <td class="px-8 py-5 text-sm font-mono text-on-surface-variant">ANM-{{ adoption.Animal_ID }}</td>
+                            <td class="px-8 py-5">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-[14px] text-on-secondary-container">pets</span>
+                                    </div>
+                                    <span class="text-sm font-semibold text-on-surface">{{ adoption.animal.Name }}</span>
+                                </div>
+                            </td>
+                            <td class="px-8 py-5 text-right font-bold text-primary">{{ adoption.Fee | in_rupees }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="px-8 py-5 text-center text-sm text-on-surface-variant">No adoptions on record.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Widgets -->
+    <div class="space-y-6">
+        
+        <!-- Payment Summary Widget -->
+        <div class="bg-gradient-to-br from-[#41608c] to-[#35547f] rounded-xl p-6 text-on-primary shadow-lg relative overflow-hidden">
+            <div class="relative z-10">
+                <div class="flex items-center justify-between mb-8">
+                    <span class="material-symbols-outlined text-3xl opacity-50">payments</span>
+                    <span class="text-[10px] font-bold tracking-widest uppercase bg-white/20 px-2 py-1 rounded-lg">Financial Summary</span>
+                </div>
+                <p class="text-sm font-medium opacity-80 mb-1">Total Contributions</p>
+                <h4 class="text-4xl font-black font-headline tracking-tighter">{{ total_fees | in_rupees }}</h4>
+                <div class="mt-6 flex items-center gap-2 text-xs font-medium bg-black/10 w-fit px-3 py-1.5 rounded-full">
+                    <span class="w-2 h-2 rounded-full bg-secondary-fixed"></span>
+                    Account in good standing
+                </div>
+            </div>
+            <!-- Decorative background shapes -->
+            <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+            <div class="absolute -left-4 -top-4 w-24 h-24 bg-primary-container/10 rounded-full blur-xl"></div>
+        </div>
+
+        <!-- Contact Info Section -->
+        <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+            <h3 class="font-headline font-bold text-[#41608c] mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">call</span> Contact Directory
+            </h3>
+            
+            <div class="space-y-5">
+                {% for phone in adopter.phones %}
+                <div class="flex items-start gap-4 p-3 rounded-lg hover:bg-surface-container-low transition-colors">
+                    <div class="bg-primary/10 p-2 rounded-lg">
+                        <span class="material-symbols-outlined text-primary text-xl">smartphone</span>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Registered Mobile</p>
+                        <p class="text-base font-bold text-on-surface">{{ phone.Phone_Number | in_mobile }}</p>
+                        <span class="text-[10px] text-on-surface-variant font-medium">Verified • Active</span>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-sm text-on-surface-variant p-2">No phone numbers registered.</p>
+                {% endfor %}
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-surface-container-low">
+                <button class="w-full flex items-center justify-center gap-2 text-sm font-bold text-primary py-2 hover:bg-primary/5 rounded-lg transition-colors">
+                    <span class="material-symbols-outlined text-base">add</span>
+                    Add Contact Method
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
