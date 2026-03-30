@@ -1,8 +1,11 @@
 import locale
 import re
+import io
+import bson.binary
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
 from flask_sqlalchemy import SQLAlchemy
+from flask_pymongo import PyMongo
 from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
@@ -12,6 +15,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'haven_flow_secret' # Needed for flash messages
 
 db = SQLAlchemy(app)
+
+# MongoDB Configuration
+app.config['MONGO_URI'] = 'mongodb://localhost:27017/pams_photos'
+mongo = PyMongo(app)
 
 @app.before_request
 def require_login():
@@ -140,6 +147,108 @@ class AdoptionReturn(db.Model):
     Return_Date = db.Column(db.Date, nullable=False)
     Return_Reason = db.Column(db.Text)
     Adoption_ID = db.Column(db.Integer, db.ForeignKey('ADOPTION.Adoption_ID'), unique=True)
+
+
+# =======================
+# MONGODB IMAGE ROUTING
+# =======================
+
+@app.route('/upload_image', methods=['POST'])
+def upload_image():
+    entity_type = request.form.get('entity_type')
+    entity_id_str = request.form.get('entity_id')
+    
+    if not entity_type or not entity_id_str:
+        flash("Missing entity information.", "error")
+        return redirect(request.referrer)
+        
+    try:
+        entity_id = int(entity_id_str)
+    except ValueError:
+        flash("Invalid entity ID.", "error")
+        return redirect(request.referrer)
+
+    if 'photo' not in request.files:
+        flash("No photo file selected.", "error")
+        return redirect(request.referrer)
+    
+    file = request.files['photo']
+    if file.filename == '':
+        flash("No file selected.", "error")
+        return redirect(request.referrer)
+
+    try:
+        # Convert to BSON Binary
+        image_data = bson.binary.Binary(file.read())
+        
+        # Upsert the image
+        mongo.db.photos.update_one(
+            {'MySQL_ID': entity_id, 'type': entity_type},
+            {
+                '$set': {
+                    'image_data': image_data,
+                    'filename': file.filename,
+                    'mimetype': file.mimetype
+                }
+            },
+            upsert=True
+        )
+        flash("Photo uploaded successfully!", "success")
+    except Exception as e:
+        flash(f"Error uploading photo: {str(e)}", "error")
+        
+    return redirect(request.referrer)
+
+@app.route('/image/<entity_type>/<int:entity_id>')
+def serve_image(entity_type, entity_id):
+    try:
+        photo = mongo.db.photos.find_one({'MySQL_ID': entity_id, 'type': entity_type})
+        if photo and 'image_data' in photo:
+            return send_file(
+                io.BytesIO(photo['image_data']),
+                mimetype=photo.get('mimetype', 'image/jpeg')
+            )
+    except Exception:
+        pass
+        
+    return redirect('https://placehold.co/400x400/eeeeee/a0aec0?text=No+Photo')
+
+# =======================
+# RAW SQL REPORTING ROUTES
+# =======================
+
+@app.route('/reports/medical/<int:animal_id>')
+def report_medical(animal_id):
+    query = """
+SELECT m.Treatment, m.Treatment_Date, m.Notes, a.Name as Animal_Name
+FROM MEDICAL_RECORD m
+JOIN ANIMAL a ON m.Animal_ID = a.Animal_ID
+WHERE a.Animal_ID = :animal_id
+ORDER BY m.Treatment_Date DESC
+"""
+    result = db.session.execute(db.text(query), {'animal_id': animal_id}).fetchall()
+    return render_template('reports.html', report_type='medical', data=result, query_text=query.strip(), animal_id=animal_id)
+
+@app.route('/reports/revenue')
+def report_revenue():
+    query = "SELECT SUM(Amount) as Total_Revenue FROM PAYMENT"
+    result = db.session.execute(db.text(query)).fetchone()
+    total_revenue = result.Total_Revenue if result and result.Total_Revenue else 0
+    return render_template('reports.html', report_type='revenue', data={'Total_Revenue': total_revenue}, query_text=query.strip())
+
+@app.route('/reports/species')
+def report_species():
+    query = """
+SELECT s.Species_Name, COUNT(a.Animal_ID) as Available_Count
+FROM SPECIES s
+JOIN BREED b ON s.Species_ID = b.Species_ID
+JOIN ANIMAL a ON b.Breed_ID = a.Breed_ID
+WHERE a.Adoption_Status = 'Available'
+GROUP BY s.Species_Name
+ORDER BY Available_Count DESC
+"""
+    result = db.session.execute(db.text(query)).fetchall()
+    return render_template('reports.html', report_type='species', data=result, query_text=query.strip())
 
 
 # =======================
