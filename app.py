@@ -11,6 +11,7 @@ from sqlalchemy.orm import joinedload
 app = Flask(__name__)
 # The exact DB URI required by the user
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:@localhost/pams_db'
+app.config['SQLALCHEMY_ECHO'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'haven_flow_secret' # Needed for flash messages
 
