@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Notifications - Haven Flow{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-extrabold text-primary font-headline">Notifications</h1>
+            <p class="text-sm text-on-surface-variant mt-1">Global system activity alerts</p>
+        </div>
+    </div>
+
+    <div class="bg-surface-container-lowest rounded-2xl p-2 shadow-sm border border-surface-container-low">
+        {% if notifications %}
+            <div class="relative border-l border-surface-container-high ml-6 mt-4 mb-4">
+                {% for notif in notifications %}
+                <div class="mb-8 ml-6 relative group">
+                    <!-- Indicator -->
+                    {% set icon = 'info' %}
+                    {% set bg_color = 'bg-surface-container' %}
+                    {% set text_color = 'text-primary' %}
+                    
+                    {% if notif.type == 'adoption' %}
+                        {% set icon = 'pets' %}
+                        {% set bg_color = 'bg-secondary-container' %}
+                        {% set text_color = 'text-on-secondary-container' %}
+                    {% elif notif.type == 'medical' %}
+                        {% set icon = 'monitor_heart' %}
+                        {% set bg_color = 'bg-[#ffebee]' %}
+                        {% set text_color = 'text-error' %}
+                    {% elif notif.type == 'system' %}
+                        {% set icon = 'settings' %}
+                        {% set bg_color = 'bg-primary-container' %}
+                        {% set text_color = 'text-on-primary-container' %}
+                    {% endif %}
+                    
+                    <span class="absolute flex items-center justify-center w-8 h-8 rounded-full -left-[42px] ring-4 ring-surface-container-lowest {{ bg_color }}">
+                        <span class="material-symbols-outlined text-sm {{ text_color }}">{{ icon }}</span>
+                    </span>
+                    
+                    <div class="bg-surface-container-low rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow group-hover:bg-surface-container-lowest border border-transparent group-hover:border-surface-container-high">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-on-surface text-sm">{{ notif.message }}</h3>
+                            </div>
+                            <time class="text-xs text-on-surface-variant font-medium whitespace-nowrap ml-4">
+                                {{ notif.created_at.strftime('%Y-%m-%d %H:%M') if notif.created_at else 'Unknown time' }}
+                            </time>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-16">
+                <span class="material-symbols-outlined text-6xl text-outline-variant mb-4">notifications_off</span>
+                <p class="text-on-surface-variant font-medium">No recent notifications</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

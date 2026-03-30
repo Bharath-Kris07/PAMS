@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_pymongo import PyMongo
-from sqlalchemy.orm import joinedload
+from sqlalchemy import text  
 
 app = Flask(__name__)
 # The exact DB URI required by the user
@@ -21,6 +21,32 @@ db = SQLAlchemy(app)
 app.config['MONGO_URI'] = 'mongodb://localhost:27017/pams_photos'
 mongo = PyMongo(app)
 
+# =======================
+# MONGODB HELPERS
+# =======================
+def create_notification(notif_type, message):
+    try:
+        mongo.db.notifications.insert_one({
+            'type': notif_type,
+            'message': message,
+            'created_at': datetime.now()
+        })
+    except Exception as e:
+        print(f"Error creating notification: {e}")
+
+def log_audit(staff_id, action, entity, details=""):
+    try:
+        mongo.db.audit_logs.insert_one({
+            'staff_id': staff_id,
+            'action': action,
+            'entity': entity,
+            'details': details,
+            'created_at': datetime.now()
+        })
+    except Exception as e:
+        print(f"Error logging audit: {e}")
+
+
 @app.before_request
 def require_login():
     allowed_routes = ['login', 'static']
@@ -30,7 +56,8 @@ def require_login():
 @app.context_processor
 def inject_staff():
     if 'staff_id' in session:
-        staff = Staff.query.get(session['staff_id'])
+        query = text("SELECT * FROM STAFF WHERE Staff_ID = :id")
+        staff = db.session.execute(query, {'id': session['staff_id']}).fetchone()
         return dict(current_staff=staff)
     return dict(current_staff=None)
 
@@ -58,96 +85,6 @@ def in_mobile(value):
     if len(val) == 10:
         return f"+91 {val[:5]} {val[5:]}"
     return value
-
-# =======================
-# SQLALCHEMY ORM MODELS
-# =======================
-
-class Species(db.Model):
-    __tablename__ = 'SPECIES'
-    Species_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Species_Name = db.Column(db.String(50), nullable=False)
-    breeds = db.relationship('Breed', backref='species', lazy=True)
-
-class Role(db.Model):
-    __tablename__ = 'ROLE'
-    Role_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Role_Name = db.Column(db.String(50), nullable=False)
-    staff = db.relationship('Staff', backref='role', lazy=True)
-
-class Breed(db.Model):
-    __tablename__ = 'BREED'
-    Breed_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Breed_Name = db.Column(db.String(50), nullable=False)
-    Species_ID = db.Column(db.Integer, db.ForeignKey('SPECIES.Species_ID'))
-    animals = db.relationship('Animal', backref='breed', lazy=True)
-
-class Staff(db.Model):
-    __tablename__ = 'STAFF'
-    Staff_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    F_Name = db.Column(db.String(50), nullable=False)
-    L_Name = db.Column(db.String(50), nullable=False)
-    Role_ID = db.Column(db.Integer, db.ForeignKey('ROLE.Role_ID'))
-
-class Adopter(db.Model):
-    __tablename__ = 'ADOPTER'
-    Adopter_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    F_Name = db.Column(db.String(50), nullable=False)
-    L_Name = db.Column(db.String(50), nullable=False)
-    Email = db.Column(db.String(100), unique=True, nullable=False)
-    Address = db.Column(db.String(255))
-    phones = db.relationship('AdopterPhone', backref='adopter', lazy=True, cascade='all, delete-orphan')
-    adoptions = db.relationship('Adoption', backref='adopter', lazy=True)
-
-class AdopterPhone(db.Model):
-    __tablename__ = 'ADOPTER_PHONE'
-    Phone_Number = db.Column(db.String(15), primary_key=True)
-    Adopter_ID = db.Column(db.Integer, db.ForeignKey('ADOPTER.Adopter_ID', ondelete='CASCADE'), primary_key=True)
-
-class Animal(db.Model):
-    __tablename__ = 'ANIMAL'
-    Animal_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Name = db.Column(db.String(50), nullable=False)
-    Gender = db.Column(db.String(10))
-    DateOfBirth = db.Column(db.Date)
-    Adoption_Status = db.Column(db.String(20), default='Available')
-    Breed_ID = db.Column(db.Integer, db.ForeignKey('BREED.Breed_ID'))
-    medical_records = db.relationship('MedicalRecord', backref='animal', lazy=True)
-    adoptions = db.relationship('Adoption', backref='animal', lazy=True)
-
-class MedicalRecord(db.Model):
-    __tablename__ = 'MEDICAL_RECORD'
-    Record_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Treatment = db.Column(db.String(255), nullable=False)
-    Treatment_Date = db.Column(db.Date)
-    Notes = db.Column(db.Text)
-    Animal_ID = db.Column(db.Integer, db.ForeignKey('ANIMAL.Animal_ID'))
-    Staff_ID = db.Column(db.Integer, db.ForeignKey('STAFF.Staff_ID'))
-
-class Adoption(db.Model):
-    __tablename__ = 'ADOPTION'
-    Adoption_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Adoption_Date = db.Column(db.Date, nullable=False)
-    Fee = db.Column(db.Numeric(10, 2))
-    Adopter_ID = db.Column(db.Integer, db.ForeignKey('ADOPTER.Adopter_ID'))
-    Animal_ID = db.Column(db.Integer, db.ForeignKey('ANIMAL.Animal_ID'))
-    Staff_ID = db.Column(db.Integer, db.ForeignKey('STAFF.Staff_ID'))
-    payments = db.relationship('Payment', backref='adoption', lazy=True)
-    returned = db.relationship('AdoptionReturn', backref='adoption', uselist=False, lazy=True)
-
-class Payment(db.Model):
-    __tablename__ = 'PAYMENT'
-    Payment_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Amount = db.Column(db.Numeric(10, 2), nullable=False)
-    Payment_Date = db.Column(db.Date, nullable=False)
-    Adoption_ID = db.Column(db.Integer, db.ForeignKey('ADOPTION.Adoption_ID'))
-
-class AdoptionReturn(db.Model):
-    __tablename__ = 'ADOPTION_RETURN'
-    Return_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Return_Date = db.Column(db.Date, nullable=False)
-    Return_Reason = db.Column(db.Text)
-    Adoption_ID = db.Column(db.Integer, db.ForeignKey('ADOPTION.Adoption_ID'), unique=True)
 
 
 # =======================
@@ -260,9 +197,15 @@ ORDER BY Available_Count DESC
 def dashboard():
     """Main dashboard showing available animals"""
     try:
-        # We perform a try block so it won't crash if DB isn't running in our sandbox
-        available_animals = Animal.query.options(joinedload(Animal.breed).joinedload(Breed.species)).filter_by(Adoption_Status='Available').all()
-    except Exception:
+        query = text("""
+            SELECT a.*, b.Breed_Name, s.Species_Name 
+            FROM ANIMAL a
+            LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID
+            LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
+            WHERE a.Adoption_Status = 'Available'
+        """)
+        available_animals = db.session.execute(query).fetchall()
+    except Exception as e:
         available_animals = []
     return render_template('dashboard.html', animals=available_animals)
 
@@ -272,10 +215,12 @@ def login():
         staff_id = request.form.get('staff_id')
         try:
             staff_id = int(staff_id)
-            staff = Staff.query.get(staff_id)
+            query = text("SELECT * FROM STAFF WHERE Staff_ID = :id")
+            staff = db.session.execute(query, {'id': staff_id}).fetchone()
             if staff:
-                session['staff_id'] = staff.Staff_ID
+                session['staff_id'] = getattr(staff, 'Staff_ID', staff_id) 
                 flash(f"Welcome back, {staff.F_Name}!", "success")
+                log_audit(staff_id, 'login', 'staff', 'Staff logged in')
                 return redirect(url_for('dashboard'))
             else:
                 flash("Invalid Staff ID.", "error")
@@ -285,6 +230,9 @@ def login():
 
 @app.route('/logout')
 def logout():
+    staff_id = session.get('staff_id')
+    if staff_id:
+        log_audit(staff_id, 'logout', 'staff', 'Staff logged out')
     session.pop('staff_id', None)
     flash("You have been logged out.", "success")
     return redirect(url_for('login'))
@@ -295,24 +243,19 @@ def profile():
 
 @app.route('/medical/dashboard')
 def medical_dashboard():
-    # Identify animals whose latest treatment is > 180 days ago, or who have no treatments.
     thresh_date = datetime.now().date() - timedelta(days=180)
-    
-    # Subquery for latest treatment date
-    subq = db.session.query(
-        MedicalRecord.Animal_ID,
-        db.func.max(MedicalRecord.Treatment_Date).label('last_treatment')
-    ).group_by(MedicalRecord.Animal_ID).subquery()
-    
-    animals_needing_followup = db.session.query(Animal).outerjoin(
-        subq, Animal.Animal_ID == subq.c.Animal_ID
-    ).filter(
-        db.or_(
-            subq.c.last_treatment == None,
-            subq.c.last_treatment < thresh_date
-        )
-    ).all()
-    
+    query = text("""
+        SELECT a.*, m.Treatment as last_treatment_name, m.Treatment_Date as last_treatment_date
+        FROM ANIMAL a
+        LEFT JOIN (
+            SELECT Animal_ID, MAX(Treatment_Date) as max_date
+            FROM MEDICAL_RECORD
+            GROUP BY Animal_ID
+        ) last_date ON a.Animal_ID = last_date.Animal_ID
+        LEFT JOIN MEDICAL_RECORD m ON a.Animal_ID = m.Animal_ID AND m.Treatment_Date = last_date.max_date
+        WHERE last_date.max_date IS NULL OR last_date.max_date < :thresh_date
+    """)
+    animals_needing_followup = db.session.execute(query, {'thresh_date': thresh_date}).fetchall()
     return render_template('medical_dashboard.html', animals=animals_needing_followup)
 
 @app.route('/medical/add', methods=['GET', 'POST'])
@@ -324,39 +267,64 @@ def add_medical_record():
         notes = request.form.get('notes')
         
         try:
-            new_record = MedicalRecord(
-                Animal_ID=int(animal_id),
-                Treatment=treatment,
-                Treatment_Date=datetime.strptime(treatment_date, '%Y-%m-%d').date() if treatment_date else None,
-                Notes=notes,
-                Staff_ID=session.get('staff_id')
-            )
-            db.session.add(new_record)
+            insert_q = text("""
+                INSERT INTO MEDICAL_RECORD (Treatment, Treatment_Date, Notes, Animal_ID, Staff_ID)
+                VALUES (:treatment, :t_date, :notes, :a_id, :s_id)
+            """)
+            db.session.execute(insert_q, {
+                'treatment': treatment,
+                't_date': datetime.strptime(treatment_date, '%Y-%m-%d').date() if treatment_date else None,
+                'notes': notes,
+                'a_id': int(animal_id),
+                's_id': session.get('staff_id')
+            })
             db.session.commit()
+            
+            log_audit(session.get('staff_id'), 'add_medical_record', 'medical_record', f'Added treatment for Animal {animal_id}')
+            create_notification('medical', f'New medical record added for Animal ID {animal_id}')
+            
             flash('Medical record added successfully.', 'success')
             return redirect(url_for('animal_profile', id=animal_id))
         except Exception as e:
             db.session.rollback()
             flash(f'Error adding record: {str(e)}', 'error')
             
-    animals = Animal.query.all()
+    try:
+        animals = db.session.execute(text("SELECT * FROM ANIMAL")).fetchall()
+    except:
+        animals = []
     return render_template('add_medical_record.html', animals=animals)
 
 @app.route('/analytics/revenue')
 def revenue_dashboard():
-    total_revenue = db.session.query(db.func.sum(Payment.Amount)).scalar() or 0
-    
-    # Pending Dues: Adoption Fee > sum of payments
-    pending_dues = db.session.query(
-        Adoption,
-        db.func.coalesce(db.func.sum(Payment.Amount), 0).label('paid_amount')
-    ).outerjoin(Payment, Adoption.Adoption_ID == Payment.Adoption_ID)\
-     .group_by(Adoption.Adoption_ID)\
-     .having(db.func.coalesce(db.func.sum(Payment.Amount), 0) < Adoption.Fee)\
-     .all()
-
-    recent_payments = Payment.query.order_by(Payment.Payment_Date.desc()).limit(10).all()
-     
+    try:
+        total_revenue = db.session.execute(text("SELECT SUM(Amount) as total FROM PAYMENT")).scalar() or 0
+        
+        pending_query = text("""
+            SELECT a.Adoption_ID, a.Fee, ad.F_Name, ad.L_Name, an.Name as Animal_Name,
+                   COALESCE(SUM(p.Amount), 0) as paid_amount
+            FROM ADOPTION a
+            JOIN ADOPTER ad ON a.Adopter_ID = ad.Adopter_ID
+            JOIN ANIMAL an ON a.Animal_ID = an.Animal_ID
+            LEFT JOIN PAYMENT p ON a.Adoption_ID = p.Adoption_ID
+            GROUP BY a.Adoption_ID, a.Fee, ad.F_Name, ad.L_Name, an.Name
+            HAVING COALESCE(SUM(p.Amount), 0) < a.Fee
+        """)
+        pending_dues = db.session.execute(pending_query).fetchall()
+        
+        recent_payments_query = text("""
+            SELECT p.*, ad.F_Name, ad.L_Name 
+            FROM PAYMENT p
+            JOIN ADOPTION a ON p.Adoption_ID = a.Adoption_ID
+            JOIN ADOPTER ad ON a.Adopter_ID = ad.Adopter_ID
+            ORDER BY p.Payment_Date DESC LIMIT 10
+        """)
+        recent_payments = db.session.execute(recent_payments_query).fetchall()
+    except:
+        total_revenue = 0
+        pending_dues = []
+        recent_payments = []
+         
     return render_template('revenue_dashboard.html', 
                           total_revenue=total_revenue, 
                           pending_dues=pending_dues, 
@@ -367,29 +335,34 @@ def add_animal():
     if request.method == 'POST':
         name = request.form.get('name')
         gender = request.form.get('gender')
-        dob = request.form.get('dob') # Ensure frontend sends YYYY-MM-DD
+        dob = request.form.get('dob')
         breed_id = request.form.get('breed_id')
         
         try:
-            new_animal = Animal(
-                Name=name,
-                Gender=gender,
-                DateOfBirth=datetime.strptime(dob, '%Y-%m-%d').date() if dob else None,
-                Breed_ID=int(breed_id) if breed_id else None,
-                Adoption_Status='Available'
-            )
-            db.session.add(new_animal)
+            insert_query = text("""
+                INSERT INTO ANIMAL (Name, Gender, DateOfBirth, Adoption_Status, Breed_ID)
+                VALUES (:name, :gender, :dob, 'Available', :breed_id)
+            """)
+            db.session.execute(insert_query, {
+                'name': name,
+                'gender': gender,
+                'dob': datetime.strptime(dob, '%Y-%m-%d').date() if dob else None,
+                'breed_id': int(breed_id) if breed_id else None
+            })
             db.session.commit()
+            
+            log_audit(session.get('staff_id'), 'add_animal', 'animal', f"Added animal '{name}'")
+            create_notification('system', f"New animal added to shelter: {name}")
+            
             flash(f"Animal '{name}' successfully added!", "success")
             return redirect(url_for('dashboard'))
         except Exception as e:
             db.session.rollback()
             flash(f"Error adding animal: {str(e)}", "error")
     
-    # Query breeds for the dropdown
     breeds = []
     try:
-        breeds = Breed.query.all()
+        breeds = db.session.execute(text("SELECT * FROM BREED")).fetchall()
     except:
         pass
     
@@ -402,28 +375,32 @@ def register_adopter():
         l_name = request.form.get('l_name')
         email = request.form.get('email')
         address = request.form.get('address')
-        phone = request.form.get('phone') # Capture primary phone directly
+        phone = request.form.get('phone') 
         
         try:
-            # Create adopter
-            new_adopter = Adopter(
-                F_Name=f_name, 
-                L_Name=l_name, 
-                Email=email, 
-                Address=address
-            )
-            db.session.add(new_adopter)
-            # Flush to get Adopter_ID
-            db.session.flush()
+            insert_q = text("""
+                INSERT INTO ADOPTER (F_Name, L_Name, Email, Address)
+                VALUES (:fn, :ln, :em, :addr)
+            """)
+            db.session.execute(insert_q, {'fn': f_name, 'ln': l_name, 'em': email, 'addr': address})
             
-            # Add phone number
-            if phone:
-                new_phone = AdopterPhone(Phone_Number=phone, Adopter_ID=new_adopter.Adopter_ID)
-                db.session.add(new_phone)
+            adopter_id_q = text("SELECT Adopter_ID FROM ADOPTER WHERE Email = :em ORDER BY Adopter_ID DESC LIMIT 1")
+            new_id_res = db.session.execute(adopter_id_q, {'em': email}).fetchone()
+            adopter_id = new_id_res.Adopter_ID if new_id_res else None
+            
+            if phone and adopter_id:
+                db.session.execute(text("INSERT INTO ADOPTER_PHONE (Phone_Number, Adopter_ID) VALUES (:ph, :aid)"), 
+                                   {'ph': phone, 'aid': adopter_id})
                 
             db.session.commit()
+            
+            log_audit(session.get('staff_id'), 'register_adopter', 'adopter', f"Registered {f_name} {l_name}")
+            create_notification('adoption', f"New adopter registered: {f_name} {l_name}")
+            
             flash("Adopter registered successfully!", "success")
-            return redirect(url_for('adopter_profile', id=new_adopter.Adopter_ID))
+            if adopter_id:
+                return redirect(url_for('adopter_profile', id=adopter_id))
+            return redirect(url_for('dashboard'))
         except Exception as e:
             db.session.rollback()
             flash(f"Error registering adopter: {str(e)}", "error")
@@ -432,17 +409,87 @@ def register_adopter():
 
 @app.route('/animal/<int:id>')
 def animal_profile(id):
-    animal = Animal.query.get_or_404(id)
-    return render_template('animal_profile.html', animal=animal)
+    animal = db.session.execute(text("""
+        SELECT a.*, b.Breed_Name, s.Species_Name
+        FROM ANIMAL a
+        LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID
+        LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
+        WHERE a.Animal_ID = :id
+    """), {'id': id}).fetchone()
+    
+    if not animal:
+        flash("Animal not found.", "error")
+        return redirect(url_for('dashboard'))
+        
+    medical_records = db.session.execute(text("SELECT * FROM MEDICAL_RECORD WHERE Animal_ID = :id ORDER BY Treatment_Date DESC"), {'id': id}).fetchall()
+    
+    adoptions = db.session.execute(text("""
+        SELECT ad.*, a.F_Name, a.L_Name 
+        FROM ADOPTION ad
+        JOIN ADOPTER a ON ad.Adopter_ID = a.Adopter_ID
+        WHERE ad.Animal_ID = :id
+    """), {'id': id}).fetchall()
+
+    return render_template('animal_profile.html', animal=animal, medical_records=medical_records, adoptions=adoptions)
 
 @app.route('/adopter/<int:id>')
 def adopter_profile(id):
-    adopter = Adopter.query.get_or_404(id)
+    adopter = db.session.execute(text("SELECT * FROM ADOPTER WHERE Adopter_ID = :id"), {'id': id}).fetchone()
     
-    # Optional logic: total adoption fees the adopter paid across all adoptions
-    total_fees = sum([float(a.Fee or 0) for a in adopter.adoptions])
+    if not adopter:
+        flash("Adopter not found.", "error")
+        return redirect(url_for('dashboard'))
+        
+    phones_data = db.session.execute(text("SELECT Phone_Number FROM ADOPTER_PHONE WHERE Adopter_ID = :id"), {'id': id}).fetchall()
+    phones = [p.Phone_Number for p in phones_data]
     
-    return render_template('adopter_profile.html', adopter=adopter, total_fees=total_fees)
+    adoptions = db.session.execute(text("""
+        SELECT ad.*, a.Name as Animal_Name 
+        FROM ADOPTION ad
+        JOIN ANIMAL a ON ad.Animal_ID = a.Animal_ID
+        WHERE ad.Adopter_ID = :id
+    """), {'id': id}).fetchall()
+    
+    total_fees = sum([float(a.Fee or 0) for a in adoptions])
+    
+    return render_template('adopter_profile.html', adopter=adopter, phones=phones, adoptions=adoptions, total_fees=total_fees)
+
+@app.route('/notifications')
+def notifications():
+    try:
+        notifs = list(mongo.db.notifications.find().sort("created_at", -1).limit(50))
+    except Exception:
+        notifs = []
+    return render_template('notifications.html', notifications=notifs)
+
+@app.route('/audit-logs')
+def audit_logs():
+    try:
+        logs = list(mongo.db.audit_logs.find().sort("created_at", -1).limit(50))
+    except Exception:
+        logs = []
+        
+    enriched_logs = []
+    for log in logs:
+        staff_name = "Unknown"
+        s_id = log.get('staff_id')
+        if s_id:
+            try:
+                staff = db.session.execute(text("SELECT F_Name, L_Name FROM STAFF WHERE Staff_ID = :id"), {'id': s_id}).fetchone()
+                if staff:
+                    staff_name = f"{staff.F_Name} {staff.L_Name}"
+            except Exception:
+                pass
+        
+        enriched_logs.append({
+            'created_at': log.get('created_at'),
+            'action': log.get('action'),
+            'entity': log.get('entity'),
+            'details': log.get('details'),
+            'staff_name': staff_name
+        })
+        
+    return render_template('audit_logs.html', logs=enriched_logs)
 
 
 if __name__ == '__main__':

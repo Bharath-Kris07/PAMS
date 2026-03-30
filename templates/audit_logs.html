@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Audit Logs - Haven Flow{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-extrabold text-primary font-headline">Audit Logs</h1>
+            <p class="text-sm text-on-surface-variant mt-1">System-wide staff activity tracker</p>
+        </div>
+    </div>
+
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-surface-container-low text-on-surface-variant text-xs uppercase tracking-wider font-bold">
+                        <th class="px-6 py-4">Date & Time</th>
+                        <th class="px-6 py-4">Staff Member</th>
+                        <th class="px-6 py-4">Action</th>
+                        <th class="px-6 py-4">Entity</th>
+                        <th class="px-6 py-4">Details</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm font-medium">
+                    {% for log in logs %}
+                    <tr class="hover:bg-[#f7fafc] transition-colors {{ 'bg-surface-container-lowest' if loop.index0 % 2 == 0 else 'bg-[#fafcfd]' }}">
+                        <td class="px-6 py-4 text-on-surface-variant whitespace-nowrap">
+                            {{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else '-' }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+                                    <span class="text-[10px] font-bold text-on-primary-container">{{ log.staff_name[0] if log.staff_name else '?' }}</span>
+                                </div>
+                                <span class="text-primary font-bold">{{ log.staff_name }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-surface-container text-on-surface">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-on-surface-variant uppercase tracking-wider text-[10px] font-bold">
+                            {{ log.entity }}
+                        </td>
+                        <td class="px-6 py-4 text-on-surface max-w-sm truncate" title="{{ log.details }}">
+                            {{ log.details }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-on-surface-variant">
+                            <span class="material-symbols-outlined text-4xl mb-2 opacity-50">history_toggle_off</span>
+                            <p>No audit logs found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

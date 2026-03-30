@@ -34,7 +34,6 @@
             </thead>
             <tbody class="divide-y-0 text-sm">
             {% for animal in animals %}
-                {% set last_record = animal.medical_records[-1] if animal.medical_records else None %}
                 <tr class="hover:bg-surface-container-low transition-colors group">
                     <td class="px-8 py-5">
                         <div class="flex items-center gap-3">
@@ -44,7 +43,7 @@
                             <div>
                                 <span class="font-semibold text-on-surface flex items-center gap-1">
                                     {{ animal.Name }}
-                                    {% if not last_record %}
+                                    {% if not animal.last_treatment_date %}
                                     <span class="material-symbols-outlined text-error text-[14px]" title="No History">new_releases</span>
                                     {% endif %}
                                 </span>
@@ -58,10 +57,10 @@
                         </span>
                     </td>
                     <td class="px-8 py-5">
-                        {% if last_record %}
+                        {% if animal.last_treatment_date %}
                             <div class="flex flex-col">
-                                <span class="font-semibold text-on-surface">{{ last_record.Treatment }}</span>
-                                <span class="text-[11px] font-bold text-on-surface-variant uppercase">{{ last_record.Treatment_Date.strftime('%b %d, %Y') }}</span>
+                                <span class="font-semibold text-on-surface">{{ animal.last_treatment_name }}</span>
+                                <span class="text-[11px] font-bold text-on-surface-variant uppercase">{{ animal.last_treatment_date.strftime('%b %d, %Y') }}</span>
                             </div>
                         {% else %}
                             <span class="text-[11px] font-bold text-error uppercase">No Records Found</span>

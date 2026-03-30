@@ -65,10 +65,10 @@
         </div>
     </div>
     <div class="flex items-center gap-4">
-        <button class="p-2 rounded-full hover:bg-[#eff4f7] transition-colors relative">
+        <a href="{{ url_for('notifications') }}" class="p-2 rounded-full hover:bg-[#eff4f7] transition-colors relative inline-block">
             <span class="material-symbols-outlined text-[#41608c]">notifications</span>
-            <span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
-        </button>
+            <span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full shadow-sm"></span>
+        </a>
         {% if current_staff %}
         <a href="{{ url_for('profile') }}" class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center ml-2 hover:bg-primary-container/80 transition-colors" title="Staff Profile">
             <span class="text-on-primary-container text-xs font-bold">{{ current_staff.F_Name[0] }}{{ current_staff.L_Name[0] }}</span>
@@ -102,6 +102,14 @@
         <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-surface-container-lowest text-primary rounded-l-xl shadow-sm translate-x-1' if 'revenue' in request.endpoint else 'text-on-surface-variant hover:text-primary' }} font-semibold transition-all group" href="{{ url_for('revenue_dashboard') }}">
             <span class="material-symbols-outlined group-hover:scale-110 transition-transform">payments</span>
             <span>Financials</span>
+        </a>
+        
+        <div class="mt-8 mb-2 px-4">
+            <p class="text-xs text-on-surface-variant font-medium">Administration</p>
+        </div>
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-surface-container-lowest text-primary rounded-l-xl shadow-sm translate-x-1' if request.endpoint == 'audit_logs' else 'text-on-surface-variant hover:text-primary' }} font-semibold transition-all group" href="{{ url_for('audit_logs') }}">
+            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">policy</span>
+            <span>Audit Logs</span>
         </a>
     </div>
 </aside>

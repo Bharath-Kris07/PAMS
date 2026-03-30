@@ -41,7 +41,7 @@
                         <h2 class="text-3xl font-extrabold text-[#41608c] font-headline mt-1">{{ animal.Name }}</h2>
                         <p class="text-primary-dim font-medium text-sm flex items-center gap-1.5 mt-1">
                             <span class="material-symbols-outlined text-base">pets</span>
-                            ANM-{{ animal.Animal_ID }} • {{ animal.breed.Breed_Name if animal.breed else 'Mixed' }}
+                            ANM-{{ animal.Animal_ID }} • {{ animal.Breed_Name if animal.Breed_Name else 'Mixed' }}
                         </p>
                     </div>
                 

@@ -40,8 +40,8 @@
                         </div>
                     </td>
                     <td class="px-8 py-5 text-sm">{{ animal.Gender }}</td>
-                    <td class="px-8 py-5 text-sm text-on-surface-variant">{{ animal.breed.Breed_Name if animal.breed else 'Unknown' }}</td>
-                    <td class="px-8 py-5 text-sm text-on-surface-variant">{{ animal.breed.species.Species_Name if animal.breed and animal.breed.species else 'Unknown' }}</td>
+                    <td class="px-8 py-5 text-sm text-on-surface-variant">{{ animal.Breed_Name if animal.Breed_Name else 'Unknown' }}</td>
+                    <td class="px-8 py-5 text-sm text-on-surface-variant">{{ animal.Species_Name if animal.Species_Name else 'Unknown' }}</td>
                     <td class="px-8 py-5 text-right">
                         <a href="{{ url_for('animal_profile', id=animal.Animal_ID) }}" class="text-xs font-bold text-primary hover:underline">View Profile</a>
                     </td>
