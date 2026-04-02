@@ -398,7 +398,9 @@ def medical_dashboard():
         LEFT JOIN MEDICAL_RECORD m ON a.Animal_ID = m.Animal_ID AND m.Treatment_Date = last_date.max_date
         WHERE last_date.max_date IS NULL OR last_date.max_date < :thresh_date
     """)
-    animals_needing_followup = db.session.execute(query, {'thresh_date': thresh_date}).fetchall()
+    # Fetch animals needing followup (NULL status or > 180 days since last treatment)
+    medical_result = db.session.execute(query, {'thresh_date': thresh_date})
+    animals_needing_followup = [dict(zip([k.lower() for k in medical_result.keys()], row)) for row in medical_result.fetchall()]
     return render_template('medical_dashboard.html', animals=animals_needing_followup)
 
 @app.route('/medical/add', methods=['GET', 'POST'])
@@ -431,10 +433,9 @@ def add_medical_record():
             db.session.rollback()
             flash(f'Error adding record: {str(e)}', 'error')
             
-    try:
-        animals = db.session.execute(text("SELECT * FROM ANIMAL")).fetchall()
-    except:
-        animals = []
+    # Fetch all animals for the dropdown (normalized)
+    animal_res = db.session.execute(text("SELECT Animal_ID, Name FROM ANIMAL"))
+    animals = [dict(zip([k.lower() for k in animal_res.keys()], row)) for row in animal_res.fetchall()]
     return render_template('add_medical_record.html', animals=animals)
 
 @app.route('/analytics/revenue')
@@ -583,26 +584,44 @@ def view_adopters():
 @app.route('/animal/<int:id>')
 def animal_profile(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
-    animal = db.session.execute(text("""
+    
+    # 1. Fetch Animal Details (normalized)
+    animal_res = db.session.execute(text("""
         SELECT a.*, b.Breed_Name, s.Species_Name
         FROM ANIMAL a
         LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID
         LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
         WHERE a.Animal_ID = :id
-    """), {'id': id}).fetchone()
+    """), {'id': id})
+    animal_list = [dict(zip([k.lower() for k in animal_res.keys()], row)) for row in animal_res.fetchall()]
+    animal = animal_list[0] if animal_list else None
     
     if not animal:
         flash("Animal not found.", "error")
         return redirect(url_for('dashboard'))
         
-    medical_records = db.session.execute(text("SELECT * FROM MEDICAL_RECORD WHERE Animal_ID = :id ORDER BY Treatment_Date DESC"), {'id': id}).fetchall()
+    # 2. Fetch Medical Records (explicitly FROM MEDICAL_RECORD, normalized)
+    medical_res = db.session.execute(text("""
+        SELECT * FROM MEDICAL_RECORD 
+        WHERE Animal_ID = :id 
+        ORDER BY Treatment_Date DESC
+    """), {'id': id})
+    medical_records = [dict(zip([k.lower() for k in medical_res.keys()], row)) for row in medical_res.fetchall()]
     
-    adoptions = db.session.execute(text("""
-        SELECT ad.*, a.F_Name, a.L_Name 
-        FROM ADOPTION ad
-        JOIN ADOPTER a ON ad.Adopter_ID = a.Adopter_ID
-        WHERE ad.Animal_ID = :id
-    """), {'id': id}).fetchall()
+    # 3. Fetch Adoption History (Joining AdoptionReturn, logical status derivation, normalized)
+    adopt_res = db.session.execute(text("""
+        SELECT ad.Adoption_ID, ad.Adoption_Date, 
+               CASE WHEN ar.Return_Date IS NOT NULL THEN 'Returned' 
+                    WHEN ad.Staff_ID IS NULL THEN 'Pending' 
+                    ELSE 'Approved' END AS status, 
+               a.Adopter_ID, a.F_Name, a.L_Name, ar.Return_Date, ar.Return_Reason 
+        FROM ADOPTION ad 
+        JOIN ADOPTER a ON ad.Adopter_ID = a.Adopter_ID 
+        LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
+        WHERE ad.Animal_ID = :id 
+        ORDER BY ad.Adoption_Date DESC
+    """), {'id': id})
+    adoptions = [dict(zip([k.lower() for k in adopt_res.keys()], row)) for row in adopt_res.fetchall()]
 
     return render_template('animal_profile.html', animal=animal, medical_records=medical_records, adoptions=adoptions)
 
@@ -657,14 +676,20 @@ def view_medical_records(id):
             flash(f"Error logging record: {e}", "error")
         return redirect(url_for('view_medical_records', id=id))
         
-    animal = db.session.execute(text("SELECT * FROM ANIMAL WHERE Animal_ID = :id"), {'id': id}).fetchone()
-    medical_records = db.session.execute(text("""
+    # Fetch animal details (normalized)
+    animal_res = db.session.execute(text("SELECT * FROM ANIMAL WHERE Animal_ID = :id"), {'id': id})
+    animal = [dict(zip([k.lower() for k in animal_res.keys()], row)) for row in animal_res.fetchall()]
+    animal = animal[0] if animal else None
+
+    # Fetch medical history (normalized)
+    record_res = db.session.execute(text("""
         SELECT m.*, s.F_Name, s.L_Name 
         FROM MEDICAL_RECORD m 
         LEFT JOIN STAFF s ON m.Staff_ID = s.Staff_ID 
         WHERE m.Animal_ID = :id 
         ORDER BY m.Treatment_Date DESC
-    """), {'id': id}).fetchall()
+    """), {'id': id})
+    medical_records = [dict(zip([k.lower() for k in record_res.keys()], row)) for row in record_res.fetchall()]
     
     return render_template('medical_records.html', animal=animal, medical_records=medical_records)
 
@@ -673,17 +698,20 @@ def financial_dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
     if session.get('role_name') != 'Admin': return "Unauthorized", 403
     
-    payments = db.session.execute(text("""
-        SELECT p.*, ad.F_Name, ad.L_Name, ani.Name as Pet_Name
-        FROM PAYMENT p
-        JOIN ADOPTION a ON p.Adoption_ID = a.Adoption_ID
-        JOIN ADOPTER ad ON a.Adopter_ID = ad.Adopter_ID
-        JOIN ANIMAL ani ON a.Animal_ID = ani.Animal_ID
-        ORDER BY p.Payment_Date DESC
-    """)).mappings().all()
+    # 1. Fetch Total Revenue (normalized)
+    rev_res = db.session.execute(text("SELECT SUM(Amount) as total FROM PAYMENT")).fetchone()
+    total_revenue = float(rev_res[0]) if rev_res and rev_res[0] else 0.0
     
-    rev_res = db.session.execute(text("SELECT SUM(Amount) as rev FROM PAYMENT")).fetchone()
-    total_revenue = float(rev_res.rev) if rev_res and rev_res.rev else 0.0
+    # 2. Fetch Payments List (normalized)
+    pay_res = db.session.execute(text("""
+        SELECT p.Payment_ID, p.Amount, p.Payment_Date, ad.F_Name, ad.L_Name, ani.Name as pet_name 
+        FROM PAYMENT p 
+        JOIN ADOPTION a ON p.Adoption_ID = a.Adoption_ID 
+        JOIN ADOPTER ad ON a.Adopter_ID = ad.Adopter_ID 
+        JOIN ANIMAL ani ON a.Animal_ID = ani.Animal_ID 
+        ORDER BY p.Payment_Date DESC
+    """))
+    payments = [dict(zip([k.lower() for k in pay_res.keys()], row)) for row in pay_res.fetchall()]
     
     return render_template('financials.html', payments=payments, total_revenue=total_revenue)
 

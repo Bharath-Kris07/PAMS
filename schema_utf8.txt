@@ -1,0 +1,96 @@
+﻿Table: adopter
+  Column: Adopter_ID - INTEGER (Primary Key: False, Nullable: False)
+  Column: F_Name - VARCHAR(50) (Primary Key: False, Nullable: False)
+  Column: L_Name - VARCHAR(50) (Primary Key: False, Nullable: False)
+  Column: Email - VARCHAR(100) (Primary Key: False, Nullable: False)
+  Column: Address - VARCHAR(255) (Primary Key: False, Nullable: True)
+----------------------------------------
+Table: adopter_phone
+  Column: Phone_Number - VARCHAR(15) (Primary Key: False, Nullable: False)
+  Column: Adopter_ID - INTEGER (Primary Key: False, Nullable: False)
+  FK: ['Adopter_ID'] -> adopter.['Adopter_ID']
+----------------------------------------
+Table: adoption
+  Column: Adoption_ID - INTEGER (Primary Key: False, Nullable: False)
+  Column: Adoption_Date - DATE (Primary Key: False, Nullable: False)
+  Column: Fee - DECIMAL(10, 2) (Primary Key: False, Nullable: True)
+  Column: Adopter_ID - INTEGER (Primary Key: False, Nullable: True)
+  Column: Animal_ID - INTEGER (Primary Key: False, Nullable: True)
+  Column: Staff_ID - INTEGER (Primary Key: False, Nullable: True)
+  FK: ['Adopter_ID'] -> adopter.['Adopter_ID']
+  FK: ['Animal_ID'] -> animal.['Animal_ID']
+  FK: ['Staff_ID'] -> staff.['Staff_ID']
+----------------------------------------
+Table: adoption_return
+  Column: Return_ID - INTEGER (Primary Key: False, Nullable: False)
+  Column: Return_Date - DATE (Primary Key: False, Nullable: False)
+  Column: Return_Reason - TEXT (Primary Key: False, Nullable: True)
+  Column: Adoption_ID - INTEGER (Primary Key: False, Nullable: True)
+  FK: ['Adoption_ID'] -> adoption.['Adoption_ID']
+----------------------------------------
+Table: adoptionreturn
+  Column: Return_ID - INTEGER (Primary Key: False, Nullable: False)
+  Column: Adoption_ID - INTEGER (Primary Key: False, Nullable: True)
+  Column: Return_Date - DATE (Primary Key: False, Nullable: True)
+  Column: Return_Reason - TEXT (Primary Key: False, Nullable: True)
+  FK: ['Adoption_ID'] -> adoption.['Adoption_ID']
+----------------------------------------
+Table: animal
+  Column: Animal_ID - INTEGER (Primary Key: False, Nullable: False)
+  Column: Name - VARCHAR(50) (Primary Key: False, Nullable: False)
+  Column: Gender - VARCHAR(10) (Primary Key: False, Nullable: True)
+  Column: DateOfBirth - DATE (Primary Key: False, Nullable: True)
+  Column: Adoption_Status - VARCHAR(20) (Primary Key: False, Nullable: True)
+  Column: Breed_ID - INTEGER (Primary Key: False, Nullable: True)
+  FK: ['Breed_ID'] -> breed.['Breed_ID']
+----------------------------------------
+Table: breed
+  Column: Breed_ID - INTEGER (Primary Key: False, Nullable: False)
+  Column: Breed_Name - VARCHAR(50) (Primary Key: False, Nullable: False)
+  Column: Species_ID - INTEGER (Primary Key: False, Nullable: True)
+  FK: ['Species_ID'] -> species.['Species_ID']
+  FK: ['Species_ID'] -> species.['Species_ID']
+----------------------------------------
+Table: medical_record
+  Column: Record_ID - INTEGER (Primary Key: False, Nullable: False)
+  Column: Treatment - VARCHAR(255) (Primary Key: False, Nullable: False)
+  Column: Treatment_Date - DATE (Primary Key: False, Nullable: True)
+  Column: Notes - TEXT (Primary Key: False, Nullable: True)
+  Column: Animal_ID - INTEGER (Primary Key: False, Nullable: True)
+  Column: Staff_ID - INTEGER (Primary Key: False, Nullable: True)
+  FK: ['Animal_ID'] -> animal.['Animal_ID']
+  FK: ['Staff_ID'] -> staff.['Staff_ID']
+----------------------------------------
+Table: medicalrecord
+  Column: Record_ID - INTEGER (Primary Key: False, Nullable: False)
+  Column: Animal_ID - INTEGER (Primary Key: False, Nullable: True)
+  Column: Staff_ID - INTEGER (Primary Key: False, Nullable: True)
+  Column: Treatment_Name - VARCHAR(100) (Primary Key: False, Nullable: True)
+  Column: Treatment_Date - DATE (Primary Key: False, Nullable: True)
+  Column: Notes - TEXT (Primary Key: False, Nullable: True)
+  FK: ['Animal_ID'] -> animal.['Animal_ID']
+  FK: ['Staff_ID'] -> staff.['Staff_ID']
+----------------------------------------
+Table: payment
+  Column: Payment_ID - INTEGER (Primary Key: False, Nullable: False)
+  Column: Amount - DECIMAL(10, 2) (Primary Key: False, Nullable: False)
+  Column: Payment_Date - DATE (Primary Key: False, Nullable: False)
+  Column: Adoption_ID - INTEGER (Primary Key: False, Nullable: True)
+  FK: ['Adoption_ID'] -> adoption.['Adoption_ID']
+----------------------------------------
+Table: role
+  Column: Role_ID - INTEGER (Primary Key: False, Nullable: False)
+  Column: Role_Name - VARCHAR(50) (Primary Key: False, Nullable: False)
+----------------------------------------
+Table: species
+  Column: Species_ID - INTEGER (Primary Key: False, Nullable: False)
+  Column: Species_Name - VARCHAR(50) (Primary Key: False, Nullable: False)
+----------------------------------------
+Table: staff
+  Column: Staff_ID - INTEGER (Primary Key: False, Nullable: False)
+  Column: F_Name - VARCHAR(50) (Primary Key: False, Nullable: False)
+  Column: L_Name - VARCHAR(50) (Primary Key: False, Nullable: False)
+  Column: Role_ID - INTEGER (Primary Key: False, Nullable: True)
+  FK: ['Role_ID'] -> role.['Role_ID']
+  FK: ['Role_ID'] -> role.['Role_ID']
+----------------------------------------

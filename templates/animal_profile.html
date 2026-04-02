@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Animal Profile - Haven Flow{% endblock %}
+{% block title %}Animal Profile - {{ animal.name }} - Haven Flow{% endblock %}
 
 {% block content %}
 <div class="flex items-center justify-between mb-8">
@@ -8,11 +8,11 @@
         <nav class="flex items-center gap-2 text-xs text-on-surface-variant mb-2">
             <a href="{{ url_for('dashboard') }}" class="hover:text-primary cursor-pointer">Animal Directory</a>
             <span class="material-symbols-outlined text-[10px]">chevron_right</span>
-            <span class="text-primary font-semibold">{{ animal.Name }}</span>
+            <span class="text-primary font-semibold">{{ animal.name }}</span>
         </nav>
         <h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Animal Profile</h1>
     </div>
-    <a href="{{ url_for('view_medical_records', id=animal.Animal_ID) }}" class="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dim text-on-primary px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all active:scale-95">
+    <a href="{{ url_for('view_medical_records', id=animal.animal_id) }}" class="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dim text-on-primary px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all active:scale-95">
         <span class="material-symbols-outlined text-sm">monitor_heart</span>
         Manage Medical History
     </a>
@@ -20,22 +20,20 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 space-y-6">
+        <!-- Main Details Card -->
         <div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm transition-all border-l-4 border-primary">
             <div class="flex flex-col md:flex-row gap-8">
                 <!-- Image Section -->
                 <div class="w-full md:w-1/3 flex flex-col items-center space-y-4 shrink-0">
-                    <img src="{{ url_for('serve_image', entity_type='animal', entity_id=animal.Animal_ID) }}" alt="{{ animal.Name }}'s Photo" class="w-32 h-32 object-cover rounded-full border-4 border-surface-container-low shadow-md">
+                    <img src="{{ url_for('serve_image', entity_type='animal', entity_id=animal.animal_id) }}" alt="{{ animal.name }}'s Photo" class="w-32 h-32 object-cover rounded-full border-4 border-surface-container-low shadow-md">
                     
                     {% if session.get('role_name') == 'Admin' %}
                     <form action="{{ url_for('upload_image') }}" method="POST" enctype="multipart/form-data" class="w-full text-center">
                         <input type="hidden" name="entity_type" value="animal">
-                        <input type="hidden" name="entity_id" value="{{ animal.Animal_ID }}">
+                        <input type="hidden" name="entity_id" value="{{ animal.animal_id }}">
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Update Photo</label>
                         <input type="file" name="photo" accept="image/*" class="text-xs w-full text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
                         <button type="submit" class="mt-3 px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-full hover:bg-blue-700 transition-colors">Upload</button>
-                    </form>
-                    <form action="{{ url_for('delete_image', entity_type='animal', entity_id=animal.Animal_ID) }}" method="POST" class="w-full text-center mt-2">
-                        <button type="submit" class="text-[11px] uppercase tracking-wider text-red-500 hover:text-red-700 font-bold transition-colors" onclick="return confirm('Secure warning: Permanently delete this photo?');">Remove Photo</button>
                     </form>
                     {% endif %}
                 </div>
@@ -43,48 +41,48 @@
                 <div class="space-y-4 flex-1">
                     <div>
                         <span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Animal Details</span>
-                        <h2 class="text-3xl font-extrabold text-[#41608c] font-headline mt-1">{{ animal.Name }}</h2>
+                        <h2 class="text-3xl font-extrabold text-[#41608c] font-headline mt-1">{{ animal.name }}</h2>
                         <p class="text-primary-dim font-medium text-sm flex items-center gap-1.5 mt-1">
                             <span class="material-symbols-outlined text-base">pets</span>
-                            ANM-{{ animal.Animal_ID }} • {{ animal.Breed_Name if animal.Breed_Name else 'Mixed' }}
+                            ANM-{{ animal.animal_id }} • {{ animal.breed_name if animal.breed_name else 'Mixed' }}
                         </p>
                     </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-6 pt-4">
-                    <div class="space-y-1">
-                        <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Gender</label>
-                        <p class="text-on-surface font-medium">{{ animal.Gender or 'Unknown' }}</p>
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Date of Birth</label>
-                        <p class="text-on-surface font-medium">{{ animal.DateOfBirth.strftime('%Y-%m-%d') if animal.DateOfBirth else 'Unknown' }}</p>
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Status</label>
-                        <div class="flex">
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full {% if animal.Adoption_Status == 'Available' %}bg-secondary-container text-on-secondary-container{% else %}bg-surface-container-high text-on-surface-variant{% endif %} text-[11px] font-bold">
-                                {{ animal.Adoption_Status | upper }}
-                            </span>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-6 pt-4">
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Gender</label>
+                            <p class="text-on-surface font-medium">{{ animal.gender or 'Unknown' }}</p>
                         </div>
-                    </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Date of Birth</label>
+                            <p class="text-on-surface font-medium">{{ animal.dateofbirth or 'Unknown' }}</p>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Status</label>
+                            <div class="flex">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full {% if animal.adoption_status == 'Available' %}bg-secondary-container text-on-secondary-container{% else %}bg-surface-container-high text-on-surface-variant{% endif %} text-[11px] font-bold">
+                                    {{ animal.adoption_status | upper if animal.adoption_status else 'UNKNOWN' }}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Medical Records Timeline -->
         <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
             <h3 class="font-headline font-bold text-[#41608c] mb-6">Medical History</h3>
             <div class="relative pl-6 space-y-6">
                 <div class="absolute left-[7px] top-2 bottom-2 w-px bg-outline-variant/15"></div>
                 
-                {% for record in animal.medical_records %}
+                {% for record in medical_records %}
                 <div class="relative">
                     <div class="absolute -left-[23px] top-4 w-3.5 h-3.5 rounded-full {% if loop.first %}bg-primary{% else %}bg-primary/30{% endif %} border-2 border-surface-container-lowest"></div>
-                    <div class="space-y-1 bg-surface-container-low p-4 rounded-lg">
-                        <p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">{{ record.Treatment_Date.strftime('%b %d, %Y') if record.Treatment_Date else 'Date Unknown' }}</p>
-                        <h4 class="text-sm font-bold font-headline text-on-surface">{{ record.Treatment }}</h4>
-                        <p class="text-xs text-on-surface-variant leading-relaxed">{{ record.Notes }}</p>
+                    <div class="space-y-1 bg-surface-container-low p-4 rounded-lg hover:bg-surface-container-high transition-colors">
+                        <p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">{{ record.treatment_date or 'Date Unknown' }}</p>
+                        <h4 class="text-sm font-bold font-headline text-on-surface">{{ record.treatment }}</h4>
+                        <p class="text-xs text-on-surface-variant leading-relaxed">{{ record.notes }}</p>
                     </div>
                 </div>
                 {% else %}
@@ -94,33 +92,52 @@
         </div>
     </div>
     
+    <!-- Adoption History Log -->
     <div class="space-y-6">
         <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
             <h3 class="font-headline font-bold text-[#41608c] mb-6 flex items-center gap-2">
-                <span class="material-symbols-outlined text-lg">volunteer_activism</span> Adoption Status
+                <span class="material-symbols-outlined text-lg">history</span> Adoption History
             </h3>
-            {% if animal.adoptions %}
-                {% set latest_adoption = animal.adoptions[-1] %}
-                <p class="text-sm font-medium mb-2">Adopted by</p>
-                <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg pb-3">
-                    <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-xs font-bold">
-                        {{ latest_adoption.adopter.F_Name[0] }}{{ latest_adoption.adopter.L_Name[0] }}
+            
+            <div class="space-y-4">
+                {% for adoption in adoptions %}
+                <div class="p-4 rounded-xl border border-outline-variant/10 bg-surface-container-low transition-all hover:border-primary/20">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">ADOPT-{{ adoption.adoption_id }}</span>
+                        <span class="px-2 py-0.5 rounded-full {% if adoption.status == 'Approved' %}bg-secondary-container text-on-secondary-container{% elif adoption.status == 'Returned' %}bg-error-container text-on-error-container{% else %}bg-surface-container-high text-on-surface-variant{% endif %} text-[9px] font-bold">
+                            {{ adoption.status | upper }}
+                        </span>
                     </div>
-                    <div>
-                        <p class="text-sm font-bold text-on-surface">{{ latest_adoption.adopter.F_Name }} {{ latest_adoption.adopter.L_Name }}</p>
-                        <a href="{{ url_for('adopter_profile', id=latest_adoption.Adopter_ID) }}" class="text-[10px] text-primary hover:underline font-bold uppercase tracking-wider">View Adopter Profile</a>
+                    
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-xs font-bold">
+                            {{ adoption.f_name[0] }}{{ adoption.l_name[0] }}
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-on-surface">{{ adoption.f_name }} {{ adoption.l_name }}</p>
+                            <a href="{{ url_for('adopter_profile', id=adoption.adopter_id) }}" class="text-[10px] text-primary hover:underline font-bold uppercase tracking-wider">Adopter ID: {{ adoption.adopter_id }}</a>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-3 border-t border-outline-variant/10 text-xs text-on-surface-variant">
+                        <p>Adopted on: <span class="font-semibold text-on-surface ml-1">{{ adoption.adoption_date }}</span></p>
+                        
+                        {% if adoption.status == 'Returned' %}
+                        <div class="mt-3 p-2.5 bg-error-container/10 rounded-lg border border-error-container/20">
+                            <p class="text-[10px] font-bold text-error uppercase tracking-wider mb-1">Return Details</p>
+                            <p class="text-[11px] text-error-container font-medium italic mb-1">Date: {{ adoption.return_date }}</p>
+                            <p class="text-[11px] text-on-error-container leading-tight">Reason: {{ adoption.return_reason }}</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
-                <div class="mt-4 pt-4 border-t border-surface-container-low">
-                    <p class="text-xs text-on-surface-variant">Adoption Date: <span class="font-semibold text-on-surface">{{ latest_adoption.Adoption_Date.strftime('%Y-%m-%d') }}</span></p>
+                {% else %}
+                <div class="text-center py-8 opacity-60">
+                    <span class="material-symbols-outlined text-4xl mb-2">sentiment_neutral</span>
+                    <p class="text-xs font-bold text-on-surface-variant">No placement history found.</p>
                 </div>
-            {% else %}
-                <div class="p-4 bg-secondary-container/30 rounded-lg text-center border border-secondary-container">
-                    <span class="material-symbols-outlined text-primary mb-2 text-3xl opacity-50">home_work</span>
-                    <p class="text-sm font-bold text-on-surface">Available for Adoption</p>
-                    <p class="text-xs text-on-surface-variant mt-1">This animal is waiting for a forever home.</p>
-                </div>
-            {% endif %}
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>

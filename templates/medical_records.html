@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Medical Records - {{ animal.Name }} - Haven Flow{% endblock %}
+{% block title %}Medical Records - {{ animal.name }} - Haven Flow{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
@@ -10,14 +10,14 @@
             <nav class="flex items-center gap-2 text-xs text-on-surface-variant mb-2">
                 <a href="{{ url_for('dashboard') }}" class="hover:text-primary cursor-pointer">Directory</a>
                 <span class="material-symbols-outlined text-[10px]">chevron_right</span>
-                <a href="{{ url_for('animal_profile', id=animal.Animal_ID) }}" class="hover:text-primary cursor-pointer">{{ animal.Name }}</a>
+                <a href="{{ url_for('animal_profile', id=animal.animal_id) }}" class="hover:text-primary cursor-pointer">{{ animal.name }}</a>
                 <span class="material-symbols-outlined text-[10px]">chevron_right</span>
                 <span class="text-primary font-semibold">Medical Records</span>
             </nav>
-            <h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Health History: {{ animal.Name }}</h1>
+            <h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Health History: {{ animal.name }}</h1>
         </div>
         <div class="flex items-center gap-3">
-            <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold uppercase tracking-wider">ANM-{{ animal.Animal_ID }}</span>
+            <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold uppercase tracking-wider">ANM-{{ animal.animal_id }}</span>
         </div>
     </div>
 
@@ -39,15 +39,15 @@
                             <div class="absolute -left-[23px] top-2 w-3.5 h-3.5 rounded-full {% if loop.first %}bg-blue-600{% else %}bg-blue-200{% endif %} border-2 border-white shadow-sm"></div>
                             <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 hover:border-blue-200 transition-all group">
                                 <div class="flex justify-between items-start mb-2">
-                                    <h4 class="text-base font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{{ record.Treatment }}</h4>
-                                    <span class="text-[10px] font-bold text-gray-400 uppercase">{{ record.Treatment_Date.strftime('%b %d, %Y') if record.Treatment_Date else 'N/A' }}</span>
+                                    <h4 class="text-base font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{{ record.treatment }}</h4>
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase">{{ record.treatment_date.strftime('%b %d, %Y') if record.treatment_date else 'N/A' }}</span>
                                 </div>
-                                <p class="text-sm text-gray-600 leading-relaxed">{{ record.Notes }}</p>
+                                <p class="text-sm text-gray-600 leading-relaxed">{{ record.notes }}</p>
                                 <div class="mt-4 pt-3 border-t border-gray-200/50 flex items-center gap-2">
                                     <div class="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[8px] font-bold text-gray-600 uppercase">
-                                        {{ record.F_Name[0] if record.F_Name else '?' }}
+                                        {{ record.f_name[0] if record.f_name else '?' }}
                                     </div>
-                                    <span class="text-[10px] text-gray-400 font-medium italic">Logged by {{ record.F_Name }} {{ record.L_Name }}</span>
+                                    <span class="text-[10px] text-gray-400 font-medium italic">Logged by {{ record.f_name }} {{ record.l_name }}</span>
                                 </div>
                             </div>
                         </div>
@@ -70,7 +70,7 @@
                     Log Treatment
                 </h3>
                 
-                <form action="{{ url_for('view_medical_records', id=animal.Animal_ID) }}" method="POST" class="space-y-4">
+                <form action="{{ url_for('view_medical_records', id=animal.animal_id) }}" method="POST" class="space-y-4">
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 px-1">Treatment Name</label>
                         <input type="text" name="treatment_name" required placeholder="e.g. DHPP Vaccination"

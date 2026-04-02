@@ -27,7 +27,7 @@
                     <select id="animal_id" name="animal_id" required class="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/20 focus:border-primary/20 rounded focus:ring-2 focus:ring-primary/10 text-sm focus:outline-none transition-all">
                         <option value="" disabled selected>Select an Animal...</option>
                         {% for a in animals %}
-                            <option value="{{ a.Animal_ID }}" {% if prefilled_id|int == a.Animal_ID %}selected{% endif %}>ANM-{{ a.Animal_ID }} : {{ a.Name }}</option>
+                            <option value="{{ a.animal_id }}" {% if prefilled_id|int == a.animal_id %}selected{% endif %}>ANM-{{ a.animal_id }} : {{ a.name }}</option>
                         {% endfor %}
                     </select>
                 </div>

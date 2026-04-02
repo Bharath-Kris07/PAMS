@@ -73,21 +73,21 @@
                     {% for p in payments %}
                     <tr class="hover:bg-gray-50/80 transition-all group">
                         <td class="px-10 py-6">
-                            <span class="text-sm font-bold text-gray-900">{{ p.Payment_Date.strftime('%Y-%m-%d') if p.Payment_Date else 'Pending' }}</span>
+                            <span class="text-sm font-bold text-gray-900">{{ p.payment_date.strftime('%Y-%m-%d') if p.payment_date else 'Pending' }}</span>
                         </td>
                         <td class="px-10 py-6">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-[10px] font-bold">
-                                    {{ p.F_Name[0] }}{{ p.L_Name[0] }}
+                                    {{ p.f_name[0] }}{{ p.l_name[0] }}
                                 </div>
-                                <span class="text-sm font-semibold text-gray-800">{{ p.F_Name }} {{ p.L_Name }}</span>
+                                <span class="text-sm font-semibold text-gray-800">{{ p.f_name }} {{ p.l_name }}</span>
                             </div>
                         </td>
                         <td class="px-10 py-6">
-                            <span class="text-xs font-bold text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded-lg">PET: {{ p.Pet_Name }}</span>
+                            <span class="text-xs font-bold text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded-lg">PET: {{ p.pet_name }}</span>
                         </td>
                         <td class="px-10 py-6 text-right">
-                            <span class="text-base font-black text-[#41608c]">{{ p.Amount | in_rupees }}</span>
+                            <span class="text-base font-black text-[#41608c]">{{ p.amount | in_rupees }}</span>
                         </td>
                         <td class="px-10 py-6">
                             <div class="flex justify-center">
