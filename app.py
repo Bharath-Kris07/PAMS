@@ -479,36 +479,72 @@ def add_animal():
     if request.method == 'POST':
         name = request.form.get('name')
         gender = request.form.get('gender')
-        dob = request.form.get('dob')
-        breed_id = request.form.get('breed_id')
+        dob_str = request.form.get('dob')
+        species_name = request.form.get('species_name')
+        breed_name = request.form.get('breed_name')
         
         try:
-            insert_query = text("""
+            # 1. Resolve Species
+            species_q = text("SELECT Species_ID FROM SPECIES WHERE Species_Name = :sn")
+            species_res = db.session.execute(species_q, {'sn': species_name}).fetchone()
+            
+            if species_res:
+                species_id = species_res.Species_ID
+            else:
+                db.session.execute(text("INSERT INTO SPECIES (Species_Name) VALUES (:sn)"), {'sn': species_name})
+                species_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
+            
+            # 2. Resolve Breed (linked to species)
+            breed_q = text("SELECT Breed_ID FROM BREED WHERE Breed_Name = :bn AND Species_ID = :sid")
+            breed_res = db.session.execute(breed_q, {'bn': breed_name, 'sid': species_id}).fetchone()
+            
+            if breed_res:
+                breed_id = breed_res.Breed_ID
+            else:
+                db.session.execute(text("INSERT INTO BREED (Breed_Name, Species_ID) VALUES (:bn, :sid)"), 
+                                   {'bn': breed_name, 'sid': species_id})
+                breed_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
+
+            # 3. Insert Animal
+            dob = datetime.strptime(dob_str, '%Y-%m-%d').date() if dob_str else None
+            insert_animal_q = text("""
                 INSERT INTO ANIMAL (Name, Gender, DateOfBirth, Adoption_Status, Breed_ID)
-                VALUES (:name, :gender, :dob, 'Available', :breed_id)
+                VALUES (:name, :gender, :dob, 'Available', :bid)
             """)
-            db.session.execute(insert_query, {
+            db.session.execute(insert_animal_q, {
                 'name': name,
                 'gender': gender,
-                'dob': datetime.strptime(dob, '%Y-%m-%d').date() if dob else None,
-                'breed_id': int(breed_id) if breed_id else None
+                'dob': dob,
+                'bid': breed_id
             })
+            animal_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
+
+            # 4. Handle Optional Photo (MongoDB)
+            if 'photo' in request.files:
+                file = request.files['photo']
+                if file.filename != '':
+                    image_data = bson.binary.Binary(file.read())
+                    mongo.db.photos.update_one(
+                        {'MySQL_ID': int(animal_id), 'type': 'animal'},
+                        {
+                            '$set': {
+                                'image_data': image_data,
+                                'filename': file.filename,
+                                'mimetype': file.mimetype
+                            }
+                        },
+                        upsert=True
+                    )
+            
             db.session.commit()
-            
-            
             flash(f"Animal '{name}' successfully added!", "success")
             return redirect(url_for('dashboard'))
+            
         except Exception as e:
             db.session.rollback()
             flash(f"Error adding animal: {str(e)}", "error")
     
-    breeds = []
-    try:
-        breeds = db.session.execute(text("SELECT * FROM BREED")).fetchall()
-    except:
-        pass
-    
-    return render_template('add_animal.html', breeds=breeds)
+    return render_template('add_animal.html')
 
 @app.route('/adopter/register', methods=['GET', 'POST'])
 def register_adopter():

@@ -1,26 +1,27 @@
 {% extends "base.html" %}
 
-{% block title %}Add Animal - Haven Flow{% endblock %}
+{% block title %}Add Animal - PAMS{% endblock %}
 
 {% block content %}
 <div class="flex items-center justify-between mb-8">
     <div>
         <h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Add New Animal</h1>
-        <p class="text-sm text-on-surface-variant mt-1">Register a new pet into the system.</p>
+        <p class="text-sm text-on-surface-variant mt-1">Register a new pet into the system with dynamic species/breed support.</p>
     </div>
 </div>
 
-<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
-    <form action="{{ url_for('add_animal') }}" method="POST" class="space-y-6 max-w-2xl">
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm transition-all border-l-4 border-primary">
+    <form action="{{ url_for('add_animal') }}" method="POST" enctype="multipart/form-data" class="space-y-6 max-w-2xl">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-1">
-                <label for="name" class="text-sm font-semibold text-on-surface-variant">Name *</label>
-                <input type="text" id="name" name="name" required
-                       class="block w-full px-4 py-2 bg-surface-container-low border border-transparent rounded-lg text-sm focus:border-outline-variant/50 focus:ring-primary/10 transition-all text-on-surface">
+                <label for="name" class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Name *</label>
+                <input type="text" id="name" name="name" required placeholder="e.g. Max, Luna"
+                       class="block w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/10 rounded-lg text-sm focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all text-on-surface outline-none">
             </div>
+            
             <div class="space-y-1">
-                <label for="gender" class="text-sm font-semibold text-on-surface-variant">Gender</label>
-                <select id="gender" name="gender" class="block w-full px-4 py-2 bg-surface-container-low border border-transparent rounded-lg text-sm focus:border-outline-variant/50 focus:ring-primary/10 transition-all text-on-surface">
+                <label for="gender" class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Gender</label>
+                <select id="gender" name="gender" class="block w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/10 rounded-lg text-sm focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all text-on-surface outline-none">
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
@@ -29,26 +30,46 @@
             </div>
             
             <div class="space-y-1">
-                <label for="dob" class="text-sm font-semibold text-on-surface-variant">Date of Birth</label>
+                <label for="dob" class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Date of Birth</label>
                 <input type="date" id="dob" name="dob"
-                       class="block w-full px-4 py-2 bg-surface-container-low border border-transparent rounded-lg text-sm focus:border-outline-variant/50 focus:ring-primary/10 transition-all text-on-surface">
+                       class="block w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/10 rounded-lg text-sm focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all text-on-surface outline-none">
             </div>
 
             <div class="space-y-1">
-                <label for="breed_id" class="text-sm font-semibold text-on-surface-variant">Breed</label>
-                <select id="breed_id" name="breed_id" class="block w-full px-4 py-2 bg-surface-container-low border border-transparent rounded-lg text-sm focus:border-outline-variant/50 focus:ring-primary/10 transition-all text-on-surface">
-                    <option value="">Select Breed</option>
-                    {% for breed in breeds %}
-                        <option value="{{ breed.Breed_ID }}">{{ breed.Breed_Name }}</option>
-                    {% endfor %}
-                </select>
+                <label for="species_name" class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Species *</label>
+                <input type="text" id="species_name" name="species_name" required placeholder="e.g. Dog, Cat, Rabbit"
+                       class="block w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/10 rounded-lg text-sm focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all text-on-surface outline-none">
+            </div>
+
+            <div class="space-y-1">
+                <label for="breed_name" class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Breed *</label>
+                <input type="text" id="breed_name" name="breed_name" required placeholder="e.g. Golden Retriever, Persian"
+                       class="block w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/10 rounded-lg text-sm focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all text-on-surface outline-none">
+            </div>
+            
+            <div class="space-y-1 md:col-span-2">
+                <label for="photo" class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Pet Photo (Optional)</label>
+                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-outline-variant/20 border-dashed rounded-xl bg-surface-container-low/50 hover:bg-surface-container-low transition-colors cursor-pointer group">
+                    <div class="space-y-1 text-center">
+                        <span class="material-symbols-outlined text-4xl text-on-surface-variant group-hover:text-primary transition-colors">add_a_photo</span>
+                        <div class="flex text-sm text-on-surface-variant">
+                            <label for="photo" class="relative cursor-pointer bg-transparent rounded-md font-bold text-primary hover:text-primary-dim focus-within:outline-none transition-all">
+                                <span>Upload a file</span>
+                                <input id="photo" name="photo" type="file" accept="image/*" class="sr-only">
+                            </label>
+                            <p class="pl-1">or drag and drop</p>
+                        </div>
+                        <p class="text-xs text-on-surface-variant/60 uppercase font-bold tracking-tighter">PNG, JPG, GIF up to 5MB</p>
+                    </div>
+                </div>
             </div>
         </div>
         
-        <div class="pt-6 border-t border-surface-container-low flex justify-end">
-            <button type="submit" class="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dim text-on-primary px-6 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all active:scale-95">
+        <div class="pt-6 border-t border-surface-container-low flex justify-end gap-3">
+            <a href="{{ url_for('dashboard') }}" class="px-6 py-2.5 bg-surface-container-high text-on-primary-container font-bold rounded-xl text-sm hover:bg-surface-container-highest transition-colors">Cancel</a>
+            <button type="submit" class="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dim text-on-primary px-6 py-2.5 rounded-xl font-bold shadow-sm hover:shadow-md transition-all active:scale-95">
                 <span class="material-symbols-outlined text-sm">save</span>
-                Save Animal
+                Register Animal
             </button>
         </div>
     </form>
