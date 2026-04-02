@@ -97,10 +97,8 @@ def upload_image():
         return redirect(request.referrer)
 
     try:
-        # Convert to BSON Binary
         image_data = bson.binary.Binary(file.read())
         
-        # Upsert the image
         mongo.db.photos.update_one(
             {'MySQL_ID': entity_id, 'type': entity_type},
             {
@@ -178,7 +176,6 @@ ORDER BY Available_Count DESC
 def dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
     """Main dashboard showing available animals"""
-    # Redirect to corresponding dashboard if user is authenticated
     role_name = session.get('role_name')
     if role_name == 'Admin':
         return redirect(url_for('admin_dashboard'))
@@ -203,7 +200,6 @@ def admin_dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
     if session.get('role_name') != 'Admin': return "Unauthorized", 403
         
-    # 1. Fetch Pets (Using explicit JOINs instead of views)
     pets_result = db.session.execute(text("""
         SELECT a.Animal_ID, a.Name, a.Gender, a.Adoption_Status, s.Species_Name AS Species 
         FROM ANIMAL a 
@@ -212,7 +208,7 @@ def admin_dashboard():
     """))
     pets = [dict(zip([k.lower() for k in pets_result.keys()], row)) for row in pets_result.fetchall()]
 
-    # 2. Fetch Pending Adoptions (Status is derived: NULL Staff_ID = 'Pending')
+    # Status is derived: NULL Staff_ID = 'Pending'
     adopt_result = db.session.execute(text("""
         SELECT a.Adoption_ID, 'Pending' AS status, CONCAT(u.F_Name, ' ', u.L_Name) AS Adopter_Name, p.Name AS Pet_Name 
         FROM ADOPTION a 
@@ -222,7 +218,6 @@ def admin_dashboard():
     """))
     pending_adoptions = [dict(zip([k.lower() for k in adopt_result.keys()], row)) for row in adopt_result.fetchall()]
 
-    # 3. Fetch Staff
     staff_result = db.session.execute(text("""
         SELECT s.Staff_ID, s.F_Name, s.L_Name, r.Role_Name 
         FROM STAFF s 
@@ -240,7 +235,6 @@ def staff_dashboard():
         
     search_term = request.args.get('q')
     
-    # 1. Fetch Pets with Search Logic (No views needed)
     query_str = """
         SELECT a.Animal_ID, a.Name, a.Gender, a.Adoption_Status, s.Species_Name, b.Breed_Name 
         FROM ANIMAL a
@@ -259,7 +253,7 @@ def staff_dashboard():
     pets_result = db.session.execute(text(query_str), params)
     pets = [dict(zip([k.lower() for k in pets_result.keys()], row)) for row in pets_result.fetchall()]
 
-    # 2. Fetch Pending Adoptions (Status is derived: NULL Staff_ID = 'Pending')
+    # Status is derived: NULL Staff_ID = 'Pending'
     adopt_result = db.session.execute(text("""
         SELECT a.Adoption_ID, 'Pending' AS status, CONCAT(u.F_Name, ' ', u.L_Name) AS Adopter_Name, p.Name AS Pet_Name 
         FROM ADOPTION a 
@@ -297,7 +291,6 @@ def login():
             
         try:
             staff_id = int(staff_id)
-            # Step 1: Verify Identity and Role in MySQL (Raw SQL)
             query = text("""
                 SELECT s.*, r.Role_Name 
                 FROM STAFF s 
@@ -307,7 +300,6 @@ def login():
             staff = db.session.execute(query, {'id': staff_id}).fetchone()
             
             if staff:
-                # Step 2: Verify Credentials in MongoDB
                 auth_doc = mongo.db.credentials.find_one({'staff_id': staff_id})
                 
                 if auth_doc and check_password_hash(auth_doc['password_hash'], password):
@@ -373,7 +365,6 @@ def profile():
             
         return redirect(url_for('profile'))
         
-    # GET: Fetch User Details from MySQL (Raw SQL)
     query = text("""
         SELECT s.*, r.Role_Name 
         FROM STAFF s 
@@ -398,7 +389,6 @@ def medical_dashboard():
         LEFT JOIN MEDICAL_RECORD m ON a.Animal_ID = m.Animal_ID AND m.Treatment_Date = last_date.max_date
         WHERE last_date.max_date IS NULL OR last_date.max_date < :thresh_date
     """)
-    # Fetch animals needing followup (NULL status or > 180 days since last treatment)
     medical_result = db.session.execute(query, {'thresh_date': thresh_date})
     animals_needing_followup = [dict(zip([k.lower() for k in medical_result.keys()], row)) for row in medical_result.fetchall()]
     return render_template('medical_dashboard.html', animals=animals_needing_followup)
@@ -433,7 +423,6 @@ def add_medical_record():
             db.session.rollback()
             flash(f'Error adding record: {str(e)}', 'error')
             
-    # Fetch all animals for the dropdown (normalized)
     animal_res = db.session.execute(text("SELECT Animal_ID, Name FROM ANIMAL"))
     animals = [dict(zip([k.lower() for k in animal_res.keys()], row)) for row in animal_res.fetchall()]
     return render_template('add_medical_record.html', animals=animals)
@@ -585,7 +574,6 @@ def view_adopters():
 def animal_profile(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
     
-    # 1. Fetch Animal Details (normalized)
     animal_res = db.session.execute(text("""
         SELECT a.*, b.Breed_Name, s.Species_Name
         FROM ANIMAL a
@@ -600,7 +588,6 @@ def animal_profile(id):
         flash("Animal not found.", "error")
         return redirect(url_for('dashboard'))
         
-    # 2. Fetch Medical Records (explicitly FROM MEDICAL_RECORD, normalized)
     medical_res = db.session.execute(text("""
         SELECT * FROM MEDICAL_RECORD 
         WHERE Animal_ID = :id 
@@ -608,7 +595,6 @@ def animal_profile(id):
     """), {'id': id})
     medical_records = [dict(zip([k.lower() for k in medical_res.keys()], row)) for row in medical_res.fetchall()]
     
-    # 3. Fetch Adoption History (Joining AdoptionReturn, logical status derivation, normalized)
     adopt_res = db.session.execute(text("""
         SELECT ad.Adoption_ID, ad.Adoption_Date, 
                CASE WHEN ar.Return_Date IS NOT NULL THEN 'Returned' 
@@ -676,12 +662,10 @@ def view_medical_records(id):
             flash(f"Error logging record: {e}", "error")
         return redirect(url_for('view_medical_records', id=id))
         
-    # Fetch animal details (normalized)
     animal_res = db.session.execute(text("SELECT * FROM ANIMAL WHERE Animal_ID = :id"), {'id': id})
     animal = [dict(zip([k.lower() for k in animal_res.keys()], row)) for row in animal_res.fetchall()]
     animal = animal[0] if animal else None
 
-    # Fetch medical history (normalized)
     record_res = db.session.execute(text("""
         SELECT m.*, s.F_Name, s.L_Name 
         FROM MEDICAL_RECORD m 
@@ -698,11 +682,9 @@ def financial_dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
     if session.get('role_name') != 'Admin': return "Unauthorized", 403
     
-    # 1. Fetch Total Revenue (normalized)
     rev_res = db.session.execute(text("SELECT SUM(Amount) as total FROM PAYMENT")).fetchone()
     total_revenue = float(rev_res[0]) if rev_res and rev_res[0] else 0.0
     
-    # 2. Fetch Payments List (normalized)
     pay_res = db.session.execute(text("""
         SELECT p.Payment_ID, p.Amount, p.Payment_Date, ad.F_Name, ad.L_Name, ani.Name as pet_name 
         FROM PAYMENT p 
@@ -863,7 +845,6 @@ def reject_adoption(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
     if session.get('role_name') not in ['Admin', 'Staff']: return "Unauthorized", 403
     try:
-        # Update animal back to Available
         db.session.execute(text("UPDATE ANIMAL SET Adoption_Status = 'Available' WHERE Animal_ID = (SELECT Animal_ID FROM ADOPTION WHERE Adoption_ID = :id)"), {'id': id})
         # Delete the adoption record (reject = remove from pipeline)
         db.session.execute(text("DELETE FROM ADOPTION WHERE Adoption_ID = :id"), {'id': id})
@@ -878,12 +859,10 @@ def reject_adoption(id):
 def seed_passwords():
     from werkzeug.security import generate_password_hash
     try:
-        # Fetch all current staff IDs from MySQL (Raw SQL)
         staff_records = db.session.execute(text("SELECT Staff_ID FROM STAFF")).fetchall()
         
         for staff in staff_records:
             hashed_pw = generate_password_hash('password123')
-            # Upsert into MongoDB
             mongo.db.credentials.update_one(
                 {'staff_id': int(staff.Staff_ID)},
                 {'$set': {'password_hash': hashed_pw}},
@@ -895,5 +874,4 @@ def seed_passwords():
         return f'❌ Error seeding passwords: {str(e)}'
 
 if __name__ == '__main__':
-    # Start local flask server on port 5000
     app.run(debug=True, port=5000)
