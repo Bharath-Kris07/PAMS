@@ -31,9 +31,12 @@
                     <form action="{{ url_for('upload_image') }}" method="POST" enctype="multipart/form-data" class="w-full text-center">
                         <input type="hidden" name="entity_type" value="animal">
                         <input type="hidden" name="entity_id" value="{{ animal.animal_id }}">
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Update Photo</label>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Update Photo</label>
                         <input type="file" name="photo" accept="image/*" class="text-xs w-full text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
                         <button type="submit" class="mt-3 px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-full hover:bg-blue-700 transition-colors">Upload</button>
+                    </form>
+                    <form action="{{ url_for('delete_image', entity_type='animal', entity_id=animal.animal_id) }}" method="POST" class="w-full text-center mt-2">
+                        <button type="submit" class="text-[11px] uppercase tracking-wider text-red-500 hover:text-red-700 font-bold transition-colors" onclick="return confirm('Secure warning: Permanently delete this photo?');">Remove Photo</button>
                     </form>
                     {% endif %}
                 </div>
