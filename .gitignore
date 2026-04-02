@@ -4,3 +4,12 @@ __pycache__/
 .DS_Store
 error.txt
 *.log
+# Local utility and schema scripts
+pdf_content.txt
+read_pdf.py
+read_pdf2.py
+schema.txt
+schema_dumper.py
+inject.py
+*.pyc
+__pycache__/

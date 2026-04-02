@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Staff Operations</h1>
+        <p class="text-sm text-gray-500 mt-1">Standard access: Manage daily pet care, profiles, and register adopters.</p>
+    </div>
+    <div class="flex gap-4">
+        <a href="{{ url_for('register_adopter') }}" class="px-5 py-2.5 bg-gray-100 text-gray-900 border border-gray-300 rounded-xl font-bold text-sm shadow-sm hover:bg-gray-200 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">person_add</span>
+            Register Adopter
+        </a>
+        <a href="{{ url_for('add_animal') }}" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-sm hover:bg-blue-700 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            Add Pet
+        </a>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
+    <div class="px-8 py-5 flex items-center justify-between bg-gray-50 border-b border-gray-200">
+        <h3 class="font-bold text-gray-800">Available Pets Overview</h3>
+        <span class="text-xs font-bold text-blue-800 border border-blue-200 bg-blue-50 px-2 py-0.5 rounded uppercase tracking-wider">Standard Request Mode</span>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {% for pet in pets %}
+            <div class="p-5 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-start gap-4 hover:shadow-md hover:border-blue-300 transition-all group">
+                <div class="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center group-hover:scale-105 transition-transform text-teal-800">
+                    <span class="material-symbols-outlined">pets</span>
+                </div>
+                <div>
+                    <h4 class="font-bold text-gray-900 text-lg tracking-tight">{{ pet.Name }}</h4>
+                    <p class="text-sm text-gray-500 font-medium mt-0.5">{{ pet.Species_Name }} • {{ pet.Gender }}</p>
+                </div>
+                <!-- Note: No delete options included as per RBAC Standard Operations logic limitations -->
+                <div class="w-full flex items-center gap-2 mt-auto pt-4 border-t border-gray-200 text-center">
+                    <a href="{{ url_for('animal_profile', id=pet.Animal_ID) }}" class="flex-1 text-center py-2 bg-white text-gray-900 border border-gray-300 rounded font-semibold text-sm hover:bg-gray-100 hover:text-blue-700 transition-colors shadow-sm">
+                        Edit Record / Profile
+                    </a>
+                </div>
+            </div>
+        {% else %}
+            <p class="text-sm text-gray-500 col-span-full text-center py-10 bg-gray-50 border border-gray-200 rounded-xl">No available pets found. All pets are currently in processing or adopted.</p>
+        {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

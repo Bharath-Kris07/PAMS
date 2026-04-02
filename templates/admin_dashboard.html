@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Admin Control Panel</h1>
+        <p class="text-sm text-gray-500 mt-1">Complete access: Manage adoptions, pets, and staff accounts.</p>
+    </div>
+    <div class="flex gap-4">
+        <a href="{{ url_for('add_animal') }}" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-sm hover:bg-blue-700 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            Add Pet
+        </a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="xl:col-span-2 space-y-6">
+        <!-- Pets Management -->
+        <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
+            <div class="px-8 py-5 flex items-center justify-between bg-gray-50 border-b border-gray-200">
+                <h3 class="font-bold text-gray-800">All Pets Management</h3>
+                <span class="text-xs font-bold text-gray-500">{{ pets|length }} Pets Found</span>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for pet in pets %}
+                    <div class="p-4 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white transition-colors flex items-center justify-between shadow-sm">
+                        <div>
+                            <p class="font-bold text-gray-900 text-sm">{{ pet.Name }}</p>
+                            <p class="text-xs text-gray-600 mt-1">{{ pet.Species_Name }} • {{ pet.Gender }}</p>
+                            <span class="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 uppercase">{{ pet.Adoption_Status }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="{{ url_for('animal_profile', id=pet.Animal_ID) }}" class="w-8 h-8 rounded bg-white border border-gray-300 flex items-center justify-center text-blue-600 hover:bg-blue-50 transition-colors" title="Edit">
+                                <span class="material-symbols-outlined text-[16px]">edit</span>
+                            </a>
+                            <form action="{{ url_for('delete_animal', id=pet.Animal_ID) }}" method="POST" class="inline" onsubmit="return confirm('Secure Warning: Are you sure you want to delete this pet? This action cannot be undone.');">
+                                <button type="submit" class="w-8 h-8 rounded bg-red-100 flex items-center justify-center text-red-600 hover:bg-red-600 hover:text-white transition-colors" title="Delete">
+                                    <span class="material-symbols-outlined text-[16px]">delete</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-sm text-gray-500">No pets recorded.</p>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Adoption Requests Management -->
+        <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
+            <div class="px-8 py-5 flex items-center justify-between bg-gray-50 border-b border-gray-200">
+                <h3 class="font-bold text-gray-800">Adoption Requests (Active)</h3>
+                <span class="text-xs font-bold text-gray-500">{{ adoptions|length }} Pending Actions</span>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                {% for adoption in adoptions %}
+                    <div class="p-4 rounded-xl border border-gray-200 bg-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-bold text-sm text-gray-900">{{ adoption.Adopter_Name }}</span>
+                                <span class="text-[10px] bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded uppercase">Request ID: {{ adoption.Adoption_ID }}</span>
+                            </div>
+                            <p class="text-xs text-gray-600 font-medium">Interested in: <span class="text-blue-800 font-bold">{{ adoption.Pet_Name }}</span></p>
+                            <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-wider font-bold">Logged: {{ adoption.Adoption_Date.strftime('%Y-%m-%d') if adoption.Adoption_Date else 'N/A' }}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <form action="{{ url_for('accept_adoption', id=adoption.Adoption_ID) }}" method="POST">
+                                <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-xs shadow-sm hover:bg-emerald-700 transition-all">Accept</button>
+                            </form>
+                            <form action="{{ url_for('reject_adoption', id=adoption.Adoption_ID) }}" method="POST">
+                                <button type="submit" class="px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg font-bold text-xs hover:bg-red-600 hover:text-white transition-all">Reject</button>
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-sm text-gray-500 text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300">No active adoption requests found in the system views.</p>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Management -->
+    <div>
+        <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 h-full">
+            <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
+                <h3 class="font-bold text-gray-800">Staff Directory</h3>
+                <p class="text-xs text-gray-500 mt-1">Manage personnel & roles</p>
+            </div>
+            <div class="p-6 space-y-4">
+                {% for s in staff_list %}
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-800 text-sm">
+                        {{ s.F_Name[0] }}{{ s.L_Name[0] }}
+                    </div>
+                    <div>
+                        <p class="font-semibold text-sm text-gray-900">{{ s.F_Name }} {{ s.L_Name }}</p>
+                        <p class="text-xs font-medium {{ 'text-blue-600' if s.Role_Name == 'Admin' else 'text-gray-500' }}">{{ s.Role_Name if s.Role_Name else 'Unassigned' }}</p>
+                    </div>
+                    <button class="ml-auto text-blue-600 text-xs font-bold hover:underline">Manage</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

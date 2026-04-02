@@ -1,81 +1,24 @@
-<!DOCTYPE html>
-<html class="light" lang="en">
-<head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Login - Haven Flow</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "error": "#a83836",
-                        "surface": "#f7fafc",
-                        "surface-container-low": "#eff4f7",
-                        "outline-variant": "#aab3b7",
-                        "on-surface-variant": "#586064",
-                        "on-background": "#2b3437",
-                        "surface-container-lowest": "#ffffff",
-                        "primary": "#41608c",
-                        "surface-container-high": "#e2e9ed",
-                        "primary-container": "#a6c5f7",
-                        "on-surface": "#2b3437",
-                        "on-error-container": "#6e0a12",
-                        "on-secondary-container": "#395663",
-                        "secondary": "#466370",
-                        "on-primary": "#f8f8ff",
-                        "surface-container": "#e8eff2",
-                        "primary-dim": "#35547f",
-                        "on-secondary-fixed": "#264350",
-                        "secondary-container": "#c9e7f7",
-                        "on-primary-container": "#1d3f69",
-                    },
-                    fontFamily: {
-                        "headline": ["Manrope"],
-                        "body": ["Inter"],
-                        "label": ["Inter"]
-                    },
-                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
-                },
-            },
-        }
-    </script>
-</head>
-<body class="bg-surface font-body text-on-surface antialiased min-h-screen flex items-center justify-center">
+{% extends "base.html" %}
 
-<div class="w-full max-w-md p-8 bg-surface-container-lowest rounded-xl shadow-md">
+{% block title %}Login - Haven Flow{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-md p-8 bg-white rounded-xl shadow-md mx-auto mt-20 border border-gray-200">
     <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold font-headline text-primary tracking-tight">Haven Flow</h1>
-        <p class="text-sm text-on-surface-variant mt-2">Sign in to manage operations</p>
+        <h1 class="text-3xl font-bold font-headline text-blue-800 tracking-tight">Haven Flow</h1>
+        <p class="text-sm text-gray-500 mt-2">Sign in to manage operations</p>
     </div>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="p-4 mb-6 text-sm rounded-lg {% if category == 'success' %}bg-secondary-container text-on-secondary-container{% else %}bg-error/10 text-error{% endif %}" role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
 
     <form action="{{ url_for('login') }}" method="POST" class="space-y-6">
         <div>
-            <label for="staff_id" class="block text-sm font-semibold text-on-surface mb-2 font-label">Staff ID</label>
+            <label for="staff_id" class="block text-sm font-semibold text-gray-900 mb-2 font-label">Staff ID</label>
             <input type="number" id="staff_id" name="staff_id" required
-                   class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-on-surface-variant/60 outline-none" 
+                   class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder-gray-400 outline-none" 
                    placeholder="Enter your numeric Staff ID">
         </div>
-        <button type="submit" class="w-full py-3 px-4 bg-primary text-on-primary font-bold rounded-lg hover:bg-primary-dim transition-colors shadow-sm">
+        <button type="submit" class="w-full py-3 px-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
             Sign In
         </button>
     </form>
 </div>
-
-</body>
-</html>
+{% endblock %}

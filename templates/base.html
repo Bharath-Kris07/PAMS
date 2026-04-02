@@ -1,126 +1,103 @@
 <!DOCTYPE html>
-<html class="light" lang="en">
+<html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>{% block title %}Haven Flow{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <!-- Lightweight Pre-Compiled Tailwind CSS (replaces CDN compiler) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts proper connection linking -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "error": "#a83836",
-                        "surface": "#f7fafc",
-                        "surface-container-low": "#eff4f7",
-                        "outline-variant": "#aab3b7",
-                        "on-surface-variant": "#586064",
-                        "on-background": "#2b3437",
-                        "surface-container-lowest": "#ffffff",
-                        "primary": "#41608c",
-                        "surface-container-high": "#e2e9ed",
-                        "primary-container": "#a6c5f7",
-                        "on-surface": "#2b3437",
-                        "on-error-container": "#6e0a12",
-                        "on-secondary-container": "#395663",
-                        "secondary": "#466370",
-                        "on-primary": "#f8f8ff",
-                        "surface-container": "#e8eff2",
-                        "primary-dim": "#35547f",
-                        "on-secondary-fixed": "#264350",
-                        "secondary-container": "#c9e7f7",
-                        "on-primary-container": "#1d3f69",
-                    },
-                    fontFamily: {
-                        "headline": ["Manrope"],
-                        "body": ["Inter"],
-                        "label": ["Inter"]
-                    },
-                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
-                },
-            },
-        }
-    </script>
     <style>
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .font-body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-surface font-body text-on-surface antialiased">
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
 
 <!-- TopNavBar -->
-<nav class="fixed top-0 w-full z-50 bg-[#f7fafc]/80 backdrop-blur-md shadow-sm flex items-center justify-between px-6 py-3">
+<nav class="fixed top-0 w-full z-50 bg-white bg-opacity-90 backdrop-filter backdrop-blur-md shadow-sm flex items-center justify-between px-6 py-3">
     <div class="flex items-center gap-8 flex-1">
-        <a href="{{ url_for('dashboard') }}" class="text-xl font-bold tracking-tight text-[#41608c] font-headline">Haven Flow</a>
+        <a href="{{ url_for('dashboard') }}" class="text-xl font-bold tracking-tight text-blue-800 font-headline">Haven Flow</a>
         <div class="relative w-full max-w-md ml-4">
             <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <span class="material-symbols-outlined text-outline text-sm">search</span>
+                <span class="material-symbols-outlined text-gray-400 text-sm">search</span>
             </div>
-            <input class="block w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all placeholder:text-on-surface-variant/60" placeholder="Search by Adopter_ID..." type="text"/>
+            <input class="block w-full pl-10 pr-4 py-2 bg-gray-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all placeholder-gray-500" placeholder="Search by Adopter_ID..." type="text"/>
         </div>
     </div>
     <div class="flex items-center gap-4">
-        <a href="{{ url_for('notifications') }}" class="p-2 rounded-full hover:bg-[#eff4f7] transition-colors relative inline-block">
-            <span class="material-symbols-outlined text-[#41608c]">notifications</span>
-            <span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full shadow-sm"></span>
+        {% if session.get('role_name') == 'Admin' %}
+        <a href="{{ url_for('notifications') }}" class="p-2 rounded-full hover:bg-gray-100 transition-colors relative inline-block">
+            <span class="material-symbols-outlined text-blue-800">notifications</span>
+            <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full shadow-sm"></span>
         </a>
+        {% endif %}
         {% if current_staff %}
-        <a href="{{ url_for('profile') }}" class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center ml-2 hover:bg-primary-container/80 transition-colors" title="Staff Profile">
-            <span class="text-on-primary-container text-xs font-bold">{{ current_staff.F_Name[0] }}{{ current_staff.L_Name[0] }}</span>
+        <a href="{{ url_for('profile') }}" class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center ml-2 hover:bg-blue-200 transition-colors" title="Staff Profile">
+            <span class="text-blue-800 text-xs font-bold">{{ current_staff.F_Name[0] }}{{ current_staff.L_Name[0] }}</span>
         </a>
         {% endif %}
     </div>
 </nav>
 
+{% if session.get('staff_id') %}
 <!-- SideNavBar -->
-<aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-[#eff4f7] py-8 pl-4 z-40">
-    <div class="mb-10 px-4 mt-8">
-        <p class="text-xs text-on-surface-variant font-medium">Pet Management</p>
+<aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-gray-100 py-8 z-40 border-r border-gray-200">
+    <div class="mb-6 px-6 pt-4 pb-2">
+        <p class="text-xs text-gray-500 font-medium uppercase tracking-wider overflow-hidden overflow-ellipsis whitespace-nowrap">Pet Management</p>
     </div>
-    <div class="flex-1 space-y-2">
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-[#41608c] rounded-l-xl shadow-sm translate-x-1' if request.endpoint == 'dashboard' else 'text-slate-600 hover:text-[#41608c]' }} font-semibold transition-all group" href="{{ url_for('dashboard') }}">
+    <div class="flex-1 space-y-2 pl-4">
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm translate-x-1 border-blue-600 border-r-4' if request.endpoint == 'dashboard' or request.endpoint == 'admin_dashboard' or request.endpoint == 'staff_dashboard' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('dashboard') }}">
             <span class="material-symbols-outlined group-hover:scale-110 transition-transform">dashboard</span>
             <span>Dashboard</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-[#41608c] rounded-l-xl shadow-sm translate-x-1' if request.endpoint == 'add_animal' else 'text-slate-600 hover:text-[#41608c]' }} font-semibold transition-all group" href="{{ url_for('add_animal') }}">
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm translate-x-1 border-blue-600 border-r-4' if request.endpoint == 'add_animal' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('add_animal') }}">
             <span class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
             <span>Add Animal</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-surface-container-lowest text-primary rounded-l-xl shadow-sm translate-x-1' if request.endpoint == 'register_adopter' else 'text-on-surface-variant hover:text-primary' }} font-semibold transition-all group" href="{{ url_for('register_adopter') }}">
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm translate-x-1 border-blue-600 border-r-4' if request.endpoint == 'register_adopter' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('register_adopter') }}">
             <span class="material-symbols-outlined group-hover:scale-110 transition-transform">person_add</span>
             <span>Register Adopter</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-surface-container-lowest text-primary rounded-l-xl shadow-sm translate-x-1' if 'medical' in request.endpoint else 'text-on-surface-variant hover:text-primary' }} font-semibold transition-all group" href="{{ url_for('medical_dashboard') }}">
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm translate-x-1 border-blue-600 border-r-4' if 'medical' in request.endpoint else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('medical_dashboard') }}">
             <span class="material-symbols-outlined group-hover:scale-110 transition-transform">monitor_heart</span>
             <span>Medical Records</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-surface-container-lowest text-primary rounded-l-xl shadow-sm translate-x-1' if 'revenue' in request.endpoint else 'text-on-surface-variant hover:text-primary' }} font-semibold transition-all group" href="{{ url_for('revenue_dashboard') }}">
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm translate-x-1 border-blue-600 border-r-4' if 'revenue' in request.endpoint else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('revenue_dashboard') }}">
             <span class="material-symbols-outlined group-hover:scale-110 transition-transform">payments</span>
             <span>Financials</span>
         </a>
         
-        <div class="mt-8 mb-2 px-4">
-            <p class="text-xs text-on-surface-variant font-medium">Administration</p>
+        {% if session.get('role_name') == 'Admin' %}
+        <div class="mt-8 mb-2 px-6 pt-4 pb-2">
+            <p class="text-xs text-gray-500 font-medium uppercase tracking-wider overflow-hidden overflow-ellipsis whitespace-nowrap">Administration</p>
         </div>
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-surface-container-lowest text-primary rounded-l-xl shadow-sm translate-x-1' if request.endpoint == 'audit_logs' else 'text-on-surface-variant hover:text-primary' }} font-semibold transition-all group" href="{{ url_for('audit_logs') }}">
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm translate-x-1 border-blue-600 border-r-4' if request.endpoint == 'audit_logs' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('audit_logs') }}">
             <span class="material-symbols-outlined group-hover:scale-110 transition-transform">policy</span>
             <span>Audit Logs</span>
         </a>
+        {% endif %}
     </div>
 </aside>
+{% endif %}
 
 <!-- Main Content Canvas -->
-<main class="md:ml-64 pt-20 px-6 pb-12 min-h-screen">
+<main class="{% if session.get('staff_id') %}md:ml-64{% else %}flex items-center justify-center{% endif %} pt-20 px-6 pb-12 min-h-screen">
     <div class="mb-6">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="p-4 mb-4 text-sm rounded-lg {% if category == 'success' %}bg-secondary-container text-on-secondary-container{% else %}bg-error/10 text-error{% endif %}" role="alert">
+                    <div class="p-4 mb-4 text-sm rounded-lg {% if category == 'success' %}bg-green-100 text-green-800 border border-green-200{% else %}bg-red-100 text-red-600 border border-red-200{% endif %}" role="alert">
                         {{ message }}
                     </div>
                 {% endfor %}
