@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Adopters Directory - Haven Flow{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header & Search -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight font-headline">Adopters Directory</h1>
+            <p class="text-sm text-gray-500 mt-1">Manage and search registered adoptors in the system.</p>
+        </div>
+        
+        <form action="{{ url_for('view_adopters') }}" method="GET" class="relative flex-1 max-w-md">
+            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <span class="material-symbols-outlined text-gray-400 text-sm">search</span>
+            </div>
+            <input name="q" value="{{ request.args.get('q', '') }}" 
+                   class="block w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all placeholder-gray-400 outline-none shadow-sm" 
+                   placeholder="Search by ID, Name or Email..." type="text text-sm"/>
+            <button type="submit" class="absolute right-2 top-1.5 px-3 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-bold hover:bg-blue-700 transition-colors">
+                Search
+            </button>
+        </form>
+    </div>
+
+    <!-- Adopters Table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200">
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">ID</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Contact Details</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Mailing Address</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for adopter in adopters %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <span class="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">#{{ adopter.Adopter_ID }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-sm font-bold text-gray-900">{{ adopter.F_Name }} {{ adopter.L_Name }}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 text-xs text-gray-600">
+                                    <span class="material-symbols-outlined text-[14px]">mail</span>
+                                    <span>{{ adopter.Email }}</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-xs text-gray-700 font-bold">
+                                    <span class="material-symbols-outlined text-[14px] text-emerald-600">call</span>
+                                    <span>{{ adopter.Phone_Number|in_mobile if adopter.Phone_Number else 'No Phone Recorded' }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-xs text-gray-500 truncate max-w-xs">{{ adopter.Address }}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <a href="{{ url_for('adopter_profile', id=adopter.Adopter_ID) }}" 
+                               class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors">
+                                <span class="material-symbols-outlined text-[16px]">visibility</span>
+                                View Profile
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center gap-2">
+                                <span class="material-symbols-outlined text-4xl text-gray-200">person_search</span>
+                                <p class="text-gray-500 text-sm">No adopters found matching your search.</p>
+                                <a href="{{ url_for('view_adopters') }}" class="text-blue-600 text-xs font-bold hover:underline">Clear Search</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

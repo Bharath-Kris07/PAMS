@@ -1,15 +1,43 @@
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environments
 .env
+.venv
+venv/
+ENV/
+
+# Flask
+instance/
+.webassets-cache
+
+# Code Editors & OS
+.vscode/
+.idea/
 .DS_Store
-error.txt
+Thumbs.db
+
+# Local Logs & Temporary Files
 *.log
-# Local utility and schema scripts
+error.txt
+*.bak
+*.tmp
 pdf_content.txt
+
+# Local Utility Scripts (User Specific)
 read_pdf.py
 read_pdf2.py
 schema.txt
 schema_dumper.py
 inject.py
-*.pyc
-__pycache__/
+seed_passwords.py
+
+# Local Assets
+static/uploads/*
+!static/uploads/.gitkeep

@@ -9,14 +9,22 @@
         <p class="text-sm text-gray-500 mt-2">Sign in to manage operations</p>
     </div>
 
-    <form action="{{ url_for('login') }}" method="POST" class="space-y-6">
+    <form action="{{ url_for('login') }}" method="POST" class="space-y-5">
         <div>
             <label for="staff_id" class="block text-sm font-semibold text-gray-900 mb-2 font-label">Staff ID</label>
             <input type="number" id="staff_id" name="staff_id" required
                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder-gray-400 outline-none" 
                    placeholder="Enter your numeric Staff ID">
         </div>
-        <button type="submit" class="w-full py-3 px-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+        
+        <div>
+            <label for="password" class="block text-sm font-semibold text-gray-900 mb-2 font-label">Password</label>
+            <input type="password" id="password" name="password" required
+                   class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder-gray-400 outline-none" 
+                   placeholder="Enter your password">
+        </div>
+
+        <button type="submit" class="w-full mt-4 py-3 px-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
             Sign In
         </button>
     </form>

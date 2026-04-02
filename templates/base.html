@@ -5,10 +5,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>{% block title %}Haven Flow{% endblock %}</title>
     
-    <!-- Lightweight Pre-Compiled Tailwind CSS (replaces CDN compiler) -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    
-    <!-- Google Fonts proper connection linking -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -17,29 +14,31 @@
     
     <style>
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
         .font-headline { font-family: 'Manrope', sans-serif; }
-        .font-body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans antialiased">
 
 <!-- TopNavBar -->
-<nav class="fixed top-0 w-full z-50 bg-white bg-opacity-90 backdrop-filter backdrop-blur-md shadow-sm flex items-center justify-between px-6 py-3">
+<nav class="fixed top-0 w-full z-50 bg-white bg-opacity-90 backdrop-filter backdrop-blur-md shadow-sm flex items-center justify-between px-6 py-3 border-b border-gray-100">
     <div class="flex items-center gap-8">
         <a href="{{ url_for('dashboard') }}" class="text-xl font-bold tracking-tight text-blue-800 font-headline">Haven Flow</a>
     </div>
+    
     <div class="flex items-center gap-4">
-        {% if session.get('role_name') == 'Admin' %}
-        <a href="{{ url_for('notifications') }}" class="p-2 rounded-full hover:bg-gray-100 transition-colors relative inline-block">
-            <span class="material-symbols-outlined text-blue-800">notifications</span>
-            <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full shadow-sm"></span>
-        </a>
-        {% endif %}
-        {% if current_staff %}
-        <a href="{{ url_for('profile') }}" class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center ml-2 hover:bg-blue-200 transition-colors" title="Staff Profile">
-            <span class="text-blue-800 text-xs font-bold">{{ current_staff.F_Name[0] }}{{ current_staff.L_Name[0] }}</span>
-        </a>
+        {% if session.get('staff_id') %}
+            {% if session.get('role_name') == 'Admin' %}
+            <a href="{{ url_for('notifications') }}" class="p-2 rounded-full hover:bg-gray-100 transition-colors relative inline-block">
+                <span class="material-symbols-outlined text-blue-800">notifications</span>
+                <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full shadow-sm"></span>
+            </a>
+            {% endif %}
+            
+            {% if current_staff %}
+            <a href="{{ url_for('profile') }}" class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center ml-2 border border-blue-200 hover:bg-blue-200 transition-colors" title="My Profile Settings">
+                <span class="text-blue-800 text-xs font-bold">{{ current_staff.F_Name[0] }}{{ current_staff.L_Name[0] }}</span>
+            </a>
+            {% endif %}
         {% endif %}
     </div>
 </nav>
@@ -47,37 +46,45 @@
 {% if session.get('staff_id') %}
 <!-- SideNavBar -->
 <aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-gray-100 py-8 z-40 border-r border-gray-200">
-    <div class="mb-6 px-6 pt-4 pb-2">
-        <p class="text-xs text-gray-500 font-medium uppercase tracking-wider overflow-hidden overflow-ellipsis whitespace-nowrap">Pet Management</p>
+    <div class="mb-6 px-6 pt-10 pb-2">
+        <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Pet Management</p>
     </div>
     <div class="flex-1 space-y-2 pl-4">
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm translate-x-1 border-blue-600 border-r-4' if request.endpoint == 'dashboard' or request.endpoint == 'admin_dashboard' or request.endpoint == 'staff_dashboard' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('dashboard') }}">
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm border-blue-600 border-r-4' if request.endpoint in ['dashboard', 'admin_dashboard', 'staff_dashboard'] else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('dashboard') }}">
             <span class="material-symbols-outlined group-hover:scale-110 transition-transform">dashboard</span>
             <span>Dashboard</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm translate-x-1 border-blue-600 border-r-4' if request.endpoint == 'add_animal' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('add_animal') }}">
-            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm border-blue-600 border-r-4' if request.endpoint == 'add_animal' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('add_animal') }}">
+            <span class="material-symbols-outlined">add_circle</span>
             <span>Add Animal</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm translate-x-1 border-blue-600 border-r-4' if request.endpoint == 'register_adopter' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('register_adopter') }}">
-            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">person_add</span>
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm border-blue-600 border-r-4' if 'medical' in request.endpoint else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('medical_dashboard') }}">
+            <span class="material-symbols-outlined">monitor_heart</span>
+            <span>Medical</span>
+        </a>
+        <!-- Adopter Management (Visible to Both) -->
+        <div class="mt-8 mb-2 px-6 pt-4 pb-2 border-t border-gray-200 border-opacity-50">
+            <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Adopter Management</p>
+        </div>
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm border-blue-600 border-r-4' if request.endpoint == 'register_adopter' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('register_adopter') }}">
+            <span class="material-symbols-outlined text-[20px]">person_add</span>
             <span>Register Adopter</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm translate-x-1 border-blue-600 border-r-4' if 'medical' in request.endpoint else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('medical_dashboard') }}">
-            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">monitor_heart</span>
-            <span>Medical Records</span>
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm border-blue-600 border-r-4' if request.endpoint == 'view_adopters' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('view_adopters') }}">
+            <span class="material-symbols-outlined text-[20px]">group</span>
+            <span>View Adopters</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm translate-x-1 border-blue-600 border-r-4' if 'revenue' in request.endpoint else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('revenue_dashboard') }}">
-            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">payments</span>
-            <span>Financials</span>
-        </a>
-        
+
         {% if session.get('role_name') == 'Admin' %}
-        <div class="mt-8 mb-2 px-6 pt-4 pb-2">
-            <p class="text-xs text-gray-500 font-medium uppercase tracking-wider overflow-hidden overflow-ellipsis whitespace-nowrap">Administration</p>
+        <div class="mt-8 mb-2 px-6 pt-4 pb-2 border-t border-gray-200 border-opacity-50">
+            <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Administration</p>
         </div>
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm translate-x-1 border-blue-600 border-r-4' if request.endpoint == 'audit_logs' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('audit_logs') }}">
-            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">policy</span>
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm border-blue-600 border-r-4' if request.endpoint == 'revenue_dashboard' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('revenue_dashboard') }}">
+            <span class="material-symbols-outlined text-[20px]">payments</span>
+            <span>Analytics</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm border-blue-600 border-r-4' if request.endpoint == 'audit_logs' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('audit_logs') }}">
+            <span class="material-symbols-outlined text-[20px]">policy</span>
             <span>Audit Logs</span>
         </a>
         {% endif %}
@@ -86,21 +93,21 @@
 {% endif %}
 
 <!-- Main Content Canvas -->
-<main class="{% if session.get('staff_id') %}md:ml-64{% else %}flex items-center justify-center{% endif %} pt-20 px-6 pb-12 min-h-screen">
-    <div class="mb-6">
+<main class="min-h-screen pt-20 px-6 pb-12 transition-all duration-300 {% if session.get('staff_id') %} md:ml-64 {% else %} flex items-center justify-center md:ml-0 {% endif %}">
+    <div class="w-full max-w-7xl mx-auto">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="p-4 mb-4 text-sm rounded-lg {% if category == 'success' %}bg-green-100 text-green-800 border border-green-200{% else %}bg-red-100 text-red-600 border border-red-200{% endif %}" role="alert">
+                    <div class="p-4 mb-4 text-sm rounded-lg {% if category == 'success' %}bg-green-100 text-green-800 border-green-200{% else %}bg-red-100 text-red-600 border-red-200{% endif %}" role="alert">
                         {{ message }}
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
-    </div>
 
-    {% block content %}
-    {% endblock %}
+        {% block content %}
+        {% endblock %}
+    </div>
 </main>
 
 </body>

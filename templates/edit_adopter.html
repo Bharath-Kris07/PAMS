@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Adopter - Haven Flow{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Header Section -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight font-headline">Edit Adopter Profile</h1>
+            <p class="text-sm text-gray-500 mt-1 uppercase tracking-widest font-bold">Administrative Access</p>
+        </div>
+        <a href="{{ url_for('adopter_profile', id=adopter.Adopter_ID) }}" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-50 transition-all shadow-sm flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+            Back to Profile
+        </a>
+    </div>
+
+    <!-- Edit Form Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="p-8">
+            <form action="{{ url_for('edit_adopter', id=adopter.Adopter_ID) }}" method="POST" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="f_name" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-1">First Name</label>
+                        <input type="text" id="f_name" name="f_name" value="{{ adopter.F_Name }}" required
+                               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                               placeholder="John">
+                    </div>
+
+                    <div>
+                        <label for="l_name" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-1">Last Name</label>
+                        <input type="text" id="l_name" name="l_name" value="{{ adopter.L_Name }}" required
+                               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                               placeholder="Doe">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="email" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-1">Email Address</label>
+                        <input type="email" id="email" name="email" value="{{ adopter.Email }}" required
+                               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                               placeholder="john.doe@example.com">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="address" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-1">Residential Address</label>
+                        <textarea id="address" name="address" rows="3" required
+                                  class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none resize-none"
+                                  placeholder="123 Shelter Lane, Haven City">{{ adopter.Address }}</textarea>
+                    </div>
+                </div>
+
+                <div class="pt-6 flex items-center justify-end border-t border-gray-100 gap-4 mt-8">
+                    <button type="submit" class="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-xl text-sm shadow-md hover:bg-blue-700 transition-all active:scale-95">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Information Alert -->
+    <div class="mt-8 bg-blue-50 border border-blue-100 rounded-2xl p-6 flex items-start gap-4">
+        <span class="material-symbols-outlined text-blue-600">info</span>
+        <div>
+            <h4 class="text-sm font-bold text-blue-900">Administrative Record Policy</h4>
+            <p class="text-xs text-blue-700 mt-1 leading-relaxed">
+                Updating an adopter's profile will be logged in the system audit trail. Please ensure all information is verified against the adopter's physical documentation before saving.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

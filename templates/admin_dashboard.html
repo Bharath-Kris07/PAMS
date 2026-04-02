@@ -100,7 +100,10 @@
                         <p class="font-semibold text-sm text-gray-900">{{ s.F_Name }} {{ s.L_Name }}</p>
                         <p class="text-xs font-medium {{ 'text-blue-600' if s.Role_Name == 'Admin' else 'text-gray-500' }}">{{ s.Role_Name if s.Role_Name else 'Unassigned' }}</p>
                     </div>
-                    <button class="ml-auto text-blue-600 text-xs font-bold hover:underline">Manage</button>
+                    <div class="ml-auto flex items-center gap-2">
+                        <span class="flex h-2 w-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200"></span>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Active</span>
+                    </div>
                 </div>
                 {% endfor %}
             </div>

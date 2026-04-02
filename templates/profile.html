@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - Haven Flow{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8">
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight font-headline">My Profile</h1>
+            <p class="text-sm text-gray-500 mt-1 uppercase tracking-widest font-bold">Personal Account Settings</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl font-bold text-xs hover:bg-red-600 hover:text-white transition-all shadow-sm flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">logout</span>
+                Logout
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-50 transition-all shadow-sm flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Identity Card -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="h-24 bg-gradient-to-r from-blue-600 to-indigo-700"></div>
+                <div class="px-6 pb-8 text-center -mt-12">
+                    <div class="w-24 h-24 rounded-2xl bg-white border-4 border-white shadow-md mx-auto flex items-center justify-center font-bold text-3xl text-blue-800 font-headline">
+                        {{ staff.F_Name[0] }}{{ staff.L_Name[0] }}
+                    </div>
+                    <h2 class="mt-4 text-xl font-bold text-gray-900">{{ staff.F_Name }} {{ staff.L_Name }}</h2>
+                    <p class="text-xs font-bold text-blue-600 uppercase tracking-widest mt-1">{{ staff.Role_Name }}</p>
+                    
+                    <div class="mt-8 pt-8 border-t border-gray-100 space-y-4 text-left">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500 font-bold uppercase">Staff ID</span>
+                            <span class="text-xs font-mono font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded">#{{ staff.Staff_ID }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500 font-bold uppercase">System Access</span>
+                            <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded uppercase tracking-tighter">Authorized</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security & Settings -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-8 py-5 bg-gray-50 border-b border-gray-200 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-blue-600">lock_reset</span>
+                    <h3 class="font-bold text-gray-800">Security Settings</h3>
+                </div>
+                <div class="p-8">
+                    <form action="{{ url_for('profile') }}" method="POST" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label for="current_password" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Current Password</label>
+                                <input type="password" id="current_password" name="current_password" required
+                                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                       placeholder="••••••••••••">
+                            </div>
+
+                            <div>
+                                <label for="new_password" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">New Password</label>
+                                <input type="password" id="new_password" name="new_password" required
+                                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                       placeholder="Minimum 8 chars">
+                            </div>
+
+                            <div>
+                                <label for="confirm_password" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Confirm New Password</label>
+                                <input type="password" id="confirm_password" name="confirm_password" required
+                                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                       placeholder="Repeat new password">
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex items-center justify-end border-t border-gray-100 gap-4 mt-8">
+                            <button type="reset" class="px-6 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors">Reset Form</button>
+                            <button type="submit" class="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-xl text-sm shadow-md hover:bg-blue-700 transition-all">
+                                Update Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Helpful Tips Card -->
+            <div class="bg-blue-50 border border-blue-100 rounded-2xl p-6 flex items-start gap-4">
+                <span class="material-symbols-outlined text-blue-600">info</span>
+                <div>
+                    <h4 class="text-sm font-bold text-blue-900">Security Best Practices</h4>
+                    <p class="text-xs text-blue-700 mt-1 leading-relaxed">
+                        To maintain a secure shelter environment, we recommend using a combination of uppercase letters, numbers, and symbols in your password. Avoid reusing passwords from other systems.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

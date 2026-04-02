@@ -7,6 +7,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_sqlalchemy import SQLAlchemy
 from flask_pymongo import PyMongo
 from sqlalchemy import text  
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 # The exact DB URI required by the user
@@ -302,8 +303,15 @@ def delete_animal(id):
 def login():
     if request.method == 'POST':
         staff_id = request.form.get('staff_id')
+        password = request.form.get('password')
+        
+        if not staff_id or not password:
+            flash("Please enter both ID and password.", "error")
+            return render_template('login.html')
+            
         try:
             staff_id = int(staff_id)
+            # Step 1: Verify Identity and Role in MySQL (Raw SQL)
             query = text("""
                 SELECT s.*, r.Role_Name 
                 FROM STAFF s 
@@ -311,25 +319,31 @@ def login():
                 WHERE s.Staff_ID = :id
             """)
             staff = db.session.execute(query, {'id': staff_id}).fetchone()
+            
             if staff:
-                session['staff_id'] = getattr(staff, 'Staff_ID', staff_id) 
-                # Store the role name securely into the session payload
-                session['role_name'] = getattr(staff, 'Role_Name', None)
+                # Step 2: Verify Credentials in MongoDB
+                auth_doc = mongo.db.credentials.find_one({'staff_id': staff_id})
                 
-                flash(f"Welcome back, {staff.F_Name}!", "success")
-                log_audit(staff_id, 'login', 'staff', f"Staff logged in as {session['role_name']}")
-                
-                # Role-Based Routing Core Switchboard Logic
-                if session['role_name'] == 'Admin':
-                    return redirect(url_for('admin_dashboard'))
-                elif session['role_name'] == 'Staff':
-                    return redirect(url_for('staff_dashboard'))
+                if auth_doc and check_password_hash(auth_doc['password_hash'], password):
+                    session['staff_id'] = staff_id 
+                    session['role_name'] = getattr(staff, 'Role_Name', None)
+                    
+                    flash(f"Welcome back, {staff.F_Name}!", "success")
+                    log_audit(staff_id, 'login', 'staff', f"Staff logged in as {session['role_name']}")
+                    
+                    if session['role_name'] == 'Admin':
+                        return redirect(url_for('admin_dashboard'))
+                    elif session['role_name'] == 'Staff':
+                        return redirect(url_for('staff_dashboard'))
+                    else:
+                        return redirect(url_for('dashboard'))
                 else:
-                    return redirect(url_for('dashboard')) # Fallback
+                    flash("Invalid ID or Password.", "error")
+                    log_audit(staff_id, 'login_failed', 'staff', "Password mismatch or missing credentials")
             else:
-                flash("Invalid Staff ID.", "error")
+                flash("Invalid ID or Password.", "error")
         except (ValueError, TypeError):
-            flash("Staff ID must be a number.", "error")
+            flash("Staff ID must be numeric.", "error")
     return render_template('login.html')
 
 @app.route('/logout')
@@ -337,14 +351,57 @@ def logout():
     staff_id = session.get('staff_id')
     if staff_id:
         log_audit(staff_id, 'logout', 'staff', 'Staff logged out')
-    session.pop('staff_id', None)
+    session.clear() # Securely clear entire session payload
     flash("You have been logged out.", "success")
     return redirect(url_for('login'))
 
-@app.route('/profile')
+@app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if 'staff_id' not in session: return redirect(url_for('login'))
-    return render_template('staff_profile.html')
+    
+    staff_id = session['staff_id']
+    
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if not all([current_password, new_password, confirm_password]):
+            flash("All password fields are required.", "error")
+            return redirect(url_for('profile'))
+            
+        if new_password != confirm_password:
+            flash("New passwords do not match.", "error")
+            return redirect(url_for('profile'))
+            
+        try:
+            # Verify Current Password from MongoDB
+            auth_doc = mongo.db.credentials.find_one({'staff_id': staff_id})
+            if auth_doc and check_password_hash(auth_doc['password_hash'], current_password):
+                # Hash and Update in MongoDB
+                hashed_pw = generate_password_hash(new_password)
+                mongo.db.credentials.update_one(
+                    {'staff_id': staff_id},
+                    {'$set': {'password_hash': hashed_pw}}
+                )
+                flash("Password updated successfully!", "success")
+                log_audit(staff_id, 'profile_password_change', 'staff_credential', "User updated their own password")
+            else:
+                flash("Incorrect current password.", "error")
+        except Exception as e:
+            flash(f"Error updating password: {e}", "error")
+            
+        return redirect(url_for('profile'))
+        
+    # GET: Fetch User Details from MySQL (Raw SQL)
+    query = text("""
+        SELECT s.*, r.Role_Name 
+        FROM STAFF s 
+        LEFT JOIN ROLE r ON s.Role_ID = r.Role_ID 
+        WHERE s.Staff_ID = :id
+    """)
+    staff = db.session.execute(query, {'id': staff_id}).fetchone()
+    return render_template('profile.html', staff=staff)
 
 @app.route('/medical/dashboard')
 def medical_dashboard():
@@ -517,6 +574,38 @@ def register_adopter():
             
     return render_template('register_adopter.html')
 
+@app.route('/adopters')
+def view_adopters():
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    
+    try:
+        search_term = request.args.get('q')
+        # LEFT JOIN with subquery to pick the primary/first phone number recorded
+        base_query = """
+            SELECT a.*, ap.Phone_Number 
+            FROM ADOPTER a 
+            LEFT JOIN (
+                SELECT Adopter_ID, MIN(Phone_Number) as Phone_Number 
+                FROM ADOPTER_PHONE 
+                GROUP BY Adopter_ID
+            ) ap ON a.Adopter_ID = ap.Adopter_ID
+        """
+        params = {}
+        
+        if search_term:
+            base_query += " WHERE a.F_Name LIKE :term OR a.L_Name LIKE :term OR a.Email LIKE :term"
+            params['term'] = f"%{search_term}%"
+            if search_term.isdigit():
+                base_query += " OR a.Adopter_ID = :id"
+                params['id'] = int(search_term)
+        
+        base_query += " LIMIT 50"
+        adopters = db.session.execute(text(base_query), params).fetchall()
+    except Exception as e:
+        adopters = []
+        
+    return render_template('adopters_list.html', adopters=adopters)
+
 @app.route('/animal/<int:id>')
 def animal_profile(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
@@ -552,8 +641,8 @@ def adopter_profile(id):
         flash("Adopter not found.", "error")
         return redirect(url_for('dashboard'))
         
-    phones_data = db.session.execute(text("SELECT Phone_Number FROM ADOPTER_PHONE WHERE Adopter_ID = :id"), {'id': id}).fetchall()
-    phones = [p.Phone_Number for p in phones_data]
+    # Fetch all phone numbers
+    phones = db.session.execute(text("SELECT Phone_Number FROM ADOPTER_PHONE WHERE Adopter_ID = :id"), {'id': id}).fetchall()
     
     adoptions = db.session.execute(text("""
         SELECT ad.*, a.Name as Animal_Name 
@@ -565,6 +654,73 @@ def adopter_profile(id):
     total_fees = sum([float(a.Fee or 0) for a in adoptions])
     
     return render_template('adopter_profile.html', adopter=adopter, phones=phones, adoptions=adoptions, total_fees=total_fees)
+
+@app.route('/admin/adopter/<int:id>/edit', methods=['GET', 'POST'])
+def edit_adopter(id):
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    if session.get('role_name') != 'Admin': return "Unauthorized", 403
+    
+    if request.method == 'POST':
+        f_name = request.form.get('f_name')
+        l_name = request.form.get('l_name')
+        email = request.form.get('email')
+        address = request.form.get('address')
+        
+        try:
+            db.session.execute(text("""
+                UPDATE ADOPTER 
+                SET F_Name = :f, L_Name = :l, Email = :e, Address = :a 
+                WHERE Adopter_ID = :id
+            """), {'f': f_name, 'l': l_name, 'e': email, 'a': address, 'id': id})
+            db.session.commit()
+            flash("Adopter profile updated!", "success")
+            log_audit(session.get('staff_id'), 'edit_adopter', 'adopter', f"Updated ID {id}")
+            return redirect(url_for('adopter_profile', id=id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error updating profile: {e}", "error")
+            
+    adopter = db.session.execute(text("SELECT * FROM ADOPTER WHERE Adopter_ID = :id"), {'id': id}).fetchone()
+    return render_template('edit_adopter.html', adopter=adopter)
+
+@app.route('/admin/adopter/<int:id>/add_phone', methods=['POST'])
+def add_phone(id):
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    if session.get('role_name') != 'Admin': return "Unauthorized", 403
+    
+    phone = request.form.get('phone_number')
+    if not phone:
+        flash("Phone number is required.", "error")
+        return redirect(url_for('adopter_profile', id=id))
+        
+    try:
+        db.session.execute(text("INSERT INTO ADOPTER_PHONE (Adopter_ID, Phone_Number) VALUES (:id, :phone)"), 
+                         {'id': id, 'phone': phone})
+        db.session.commit()
+        flash("Contact method added!", "success")
+        log_audit(session.get('staff_id'), 'add_phone', 'adopter_phone', f"Added {phone} to ID {id}")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error adding phone: {e}", "error")
+        
+    return redirect(url_for('adopter_profile', id=id))
+
+@app.route('/admin/adopter/<int:id>/delete_phone/<path:phone>', methods=['POST'])
+def delete_phone(id, phone):
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    if session.get('role_name') != 'Admin': return "Unauthorized", 403
+    
+    try:
+        db.session.execute(text("DELETE FROM ADOPTER_PHONE WHERE Adopter_ID = :id AND Phone_Number = :phone"), 
+                         {'id': id, 'phone': phone})
+        db.session.commit()
+        flash("Contact method removed.", "success")
+        log_audit(session.get('staff_id'), 'delete_phone', 'adopter_phone', f"Removed {phone} from ID {id}")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error deleting phone: {e}", "error")
+        
+    return redirect(url_for('adopter_profile', id=id))
 
 @app.route('/notifications')
 def notifications():
@@ -606,6 +762,7 @@ def audit_logs():
         })
         
     return render_template('audit_logs.html', logs=enriched_logs)
+
 
 
 @app.route('/delete_image/<entity_type>/<int:entity_id>', methods=['POST'])
@@ -653,6 +810,26 @@ def reject_adoption(id):
         db.session.rollback()
         flash(f"Error: {e}", "error")
     return redirect(request.referrer)
+
+@app.route('/seed_passwords')
+def seed_passwords():
+    from werkzeug.security import generate_password_hash
+    try:
+        # Fetch all current staff IDs from MySQL (Raw SQL)
+        staff_records = db.session.execute(text("SELECT Staff_ID FROM STAFF")).fetchall()
+        
+        for staff in staff_records:
+            hashed_pw = generate_password_hash('password123')
+            # Upsert into MongoDB
+            mongo.db.credentials.update_one(
+                {'staff_id': int(staff.Staff_ID)},
+                {'$set': {'password_hash': hashed_pw}},
+                upsert=True
+            )
+            
+        return '✅ All passwords safely seeded into MongoDB!'
+    except Exception as e:
+        return f'❌ Error seeding passwords: {str(e)}'
 
 if __name__ == '__main__':
     # Start local flask server on port 5000
