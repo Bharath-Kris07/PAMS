@@ -21,6 +21,24 @@
                 <h3 class="font-bold text-gray-800">All Pets Management</h3>
             </div>
             <div class="p-6">
+                <!-- Administrative Search Feature -->
+                <div class="mb-6">
+                    <form action="{{ url_for('admin_dashboard') }}" method="GET" class="flex flex-col md:flex-row gap-3">
+                        <div class="relative flex-1">
+                            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                <span class="material-symbols-outlined text-gray-400 text-sm">search</span>
+                            </div>
+                            <input type="text" name="q" value="{{ request.args.get('q', '') }}" 
+                                   placeholder="Search by name, breed, species, or ID..." 
+                                   class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none shadow-sm">
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 transition-all shadow-sm">Search</button>
+                            <a href="{{ url_for('admin_dashboard') }}" class="px-5 py-2 bg-gray-100 text-gray-600 border border-gray-200 rounded-xl font-bold text-xs hover:bg-gray-200 transition-all flex items-center">Clear</a>
+                        </div>
+                    </form>
+                </div>
+
                 {% if pets %}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {% for pet in pets %}

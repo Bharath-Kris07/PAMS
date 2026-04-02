@@ -200,12 +200,22 @@ def admin_dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
     if session.get('role_name') != 'Admin': return "Unauthorized", 403
         
-    pets_result = db.session.execute(text("""
+    search_term = request.args.get('q')
+    query_str = """
         SELECT a.Animal_ID, a.Name, a.Gender, a.Adoption_Status, s.Species_Name AS Species 
         FROM ANIMAL a 
         LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID 
         LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
-    """))
+    """
+    params = {}
+    if search_term:
+        query_str += " WHERE a.Name LIKE :term OR b.Breed_Name LIKE :term OR s.Species_Name LIKE :term"
+        params['term'] = f"%{search_term}%"
+        if search_term.isdigit():
+            query_str += " OR a.Animal_ID = :exact_id"
+            params['exact_id'] = int(search_term)
+
+    pets_result = db.session.execute(text(query_str), params)
     pets = [dict(zip([k.lower() for k in pets_result.keys()], row)) for row in pets_result.fetchall()]
 
     # Status is derived: NULL Staff_ID = 'Pending'
@@ -243,10 +253,10 @@ def staff_dashboard():
     """
     params = {}
     if search_term:
-        query_str += " WHERE b.Breed_Name LIKE :term OR s.Species_Name LIKE :term"
+        query_str += " WHERE a.Name LIKE :term OR b.Breed_Name LIKE :term OR s.Species_Name LIKE :term"
         params['term'] = f"%{search_term}%"
         if search_term.isdigit():
-            query_str += " OR b.Breed_ID = :exact_id OR s.Species_ID = :exact_id"
+            query_str += " OR a.Animal_ID = :exact_id OR b.Breed_ID = :exact_id OR s.Species_ID = :exact_id"
             params['exact_id'] = int(search_term)
     query_str += " LIMIT 50"
 
