@@ -73,7 +73,7 @@ def in_mobile(value):
 @app.route('/upload_image', methods=['POST'])
 def upload_image():
     if 'staff_id' not in session: return redirect(url_for('login'))
-    if session.get('role_name') != 'Admin': return 'Unauthorized', 403
+    if session.get('role_name') not in ['Admin', 'Staff']: return 'Unauthorized', 403
     entity_type = request.form.get('entity_type')
     entity_id_str = request.form.get('entity_id')
     
@@ -206,27 +206,19 @@ def admin_dashboard():
         FROM ANIMAL a 
         LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID 
         LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
+        WHERE a.Adoption_Status = 'Available'
     """
     params = {}
     if search_term:
-        query_str += " WHERE a.Name LIKE :term OR b.Breed_Name LIKE :term OR s.Species_Name LIKE :term"
+        query_str += " AND (a.Name LIKE :term OR b.Breed_Name LIKE :term OR s.Species_Name LIKE :term"
         params['term'] = f"%{search_term}%"
         if search_term.isdigit():
             query_str += " OR a.Animal_ID = :exact_id"
             params['exact_id'] = int(search_term)
+        query_str += ")"
 
     pets_result = db.session.execute(text(query_str), params)
     pets = [dict(zip([k.lower() for k in pets_result.keys()], row)) for row in pets_result.fetchall()]
-
-    # Status is derived: NULL Staff_ID = 'Pending'
-    adopt_result = db.session.execute(text("""
-        SELECT a.Adoption_ID, 'Pending' AS status, CONCAT(u.F_Name, ' ', u.L_Name) AS Adopter_Name, p.Name AS Pet_Name 
-        FROM ADOPTION a 
-        JOIN ADOPTER u ON a.Adopter_ID = u.Adopter_ID 
-        JOIN ANIMAL p ON a.Animal_ID = p.Animal_ID 
-        WHERE a.Staff_ID IS NULL
-    """))
-    pending_adoptions = [dict(zip([k.lower() for k in adopt_result.keys()], row)) for row in adopt_result.fetchall()]
 
     staff_result = db.session.execute(text("""
         SELECT s.Staff_ID, s.F_Name, s.L_Name, r.Role_Name 
@@ -235,7 +227,7 @@ def admin_dashboard():
     """))
     staff_members = [dict(zip([k.lower() for k in staff_result.keys()], row)) for row in staff_result.fetchall()]
         
-    return render_template('admin_dashboard.html', pets=pets, pending_adoptions=pending_adoptions, staff_members=staff_members)
+    return render_template('admin_dashboard.html', pets=pets, staff_members=staff_members)
 
 
 @app.route('/staff/dashboard')
@@ -250,30 +242,22 @@ def staff_dashboard():
         FROM ANIMAL a
         LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID
         LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
+        WHERE a.Adoption_Status = 'Available'
     """
     params = {}
     if search_term:
-        query_str += " WHERE a.Name LIKE :term OR b.Breed_Name LIKE :term OR s.Species_Name LIKE :term"
+        query_str += " AND (a.Name LIKE :term OR b.Breed_Name LIKE :term OR s.Species_Name LIKE :term"
         params['term'] = f"%{search_term}%"
         if search_term.isdigit():
             query_str += " OR a.Animal_ID = :exact_id OR b.Breed_ID = :exact_id OR s.Species_ID = :exact_id"
             params['exact_id'] = int(search_term)
+        query_str += ")"
     query_str += " LIMIT 50"
 
     pets_result = db.session.execute(text(query_str), params)
     pets = [dict(zip([k.lower() for k in pets_result.keys()], row)) for row in pets_result.fetchall()]
 
-    # Status is derived: NULL Staff_ID = 'Pending'
-    adopt_result = db.session.execute(text("""
-        SELECT a.Adoption_ID, 'Pending' AS status, CONCAT(u.F_Name, ' ', u.L_Name) AS Adopter_Name, p.Name AS Pet_Name 
-        FROM ADOPTION a 
-        JOIN ADOPTER u ON a.Adopter_ID = u.Adopter_ID 
-        JOIN ANIMAL p ON a.Animal_ID = p.Animal_ID 
-        WHERE a.Staff_ID IS NULL
-    """))
-    pending_adoptions = [dict(zip([k.lower() for k in adopt_result.keys()], row)) for row in adopt_result.fetchall()]
-        
-    return render_template('staff_dashboard.html', pets=pets, pending_adoptions=pending_adoptions)
+    return render_template('staff_dashboard.html', pets=pets)
 @app.route('/animal/delete/<int:id>', methods=['POST'])
 def delete_animal(id):
     # Action route security check - Placed directly at the top
@@ -656,7 +640,48 @@ def animal_profile(id):
     """), {'id': id})
     adoptions = [dict(zip([k.lower() for k in adopt_res.keys()], row)) for row in adopt_res.fetchall()]
 
-    return render_template('animal_profile.html', animal=animal, medical_records=medical_records, adoptions=adoptions)
+    # Fetch all adopters for the adoption modal datalist
+    adopter_res = db.session.execute(text("SELECT Adopter_ID, F_Name, L_Name FROM ADOPTER ORDER BY F_Name, L_Name"))
+    adopters = [dict(zip([k.lower() for k in adopter_res.keys()], row)) for row in adopter_res.fetchall()]
+
+    return render_template('animal_profile.html', animal=animal, medical_records=medical_records, adoptions=adoptions, adopters=adopters)
+
+@app.route('/animal/<int:id>/adopt', methods=['POST'])
+def adopt_animal_direct(id):
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    if session.get('role_name') not in ['Admin', 'Staff']: return "Unauthorized", 403
+    
+    adopter_id = request.form.get('adopter_id')
+    fee = request.form.get('fee')
+    staff_id = session.get('staff_id')
+    
+    if not adopter_id or not fee:
+        flash("Please provide all required adoption details.", "error")
+        return redirect(url_for('animal_profile', id=id))
+        
+    try:
+        # Create adoption record (direct assignment)
+        db.session.execute(text("""
+            INSERT INTO ADOPTION (Animal_ID, Adopter_ID, Staff_ID, Adoption_Date, Fee) 
+            VALUES (:a_id, :ad_id, :s_id, :date, :fee)
+        """), {
+            'a_id': id,
+            'ad_id': int(adopter_id),
+            's_id': staff_id,
+            'date': datetime.now().date(),
+            'fee': float(fee)
+        })
+        
+        # Update animal status to 'Adopted'
+        db.session.execute(text("UPDATE ANIMAL SET Adoption_Status = 'Adopted' WHERE Animal_ID = :id"), {'id': id})
+        
+        db.session.commit()
+        flash("Adoption process complete! Pet successfully adopted.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error processing adoption: {str(e)}", "error")
+        
+    return redirect(url_for('animal_profile', id=id))
 
 @app.route('/adopter/<int:id>')
 def adopter_profile(id):
@@ -725,6 +750,23 @@ def view_medical_records(id):
     
     return render_template('medical_records.html', animal=animal, medical_records=medical_records)
 
+@app.route('/api/adopters/search')
+def search_adopters_api():
+    if 'staff_id' not in session: return jsonify([]), 401
+    q = request.args.get('q', '')
+    if not q: return jsonify([])
+    
+    term = f"%{q}%"
+    res = db.session.execute(text("""
+        SELECT Adopter_ID, F_Name, L_Name 
+        FROM ADOPTER 
+        WHERE F_Name LIKE :term OR L_Name LIKE :term 
+        LIMIT 10
+    """), {'term': term})
+    
+    adopters = [dict(zip([k.lower() for k in res.keys()], row)) for row in res.fetchall()]
+    return jsonify(adopters)
+
 @app.route('/admin/financials')
 def financial_dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
@@ -748,7 +790,7 @@ def financial_dashboard():
 @app.route('/admin/adoption/<int:id>/pay', methods=['POST'])
 def log_payment(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
-    if session.get('role_name') != 'Admin': return "Unauthorized", 403
+    if session.get('role_name') not in ['Admin', 'Staff']: return "Unauthorized", 403
     
     amount = request.form.get('amount')
     date = request.form.get('payment_date')
@@ -870,38 +912,6 @@ def delete_image(entity_type, entity_id):
         flash(f"Error deleting image: {e}", "error")
     return redirect(request.referrer)
 
-@app.route('/adoption/accept/<int:id>', methods=['POST'])
-def accept_adoption(id):
-    if 'staff_id' not in session: return redirect(url_for('login'))
-    if session.get('role_name') not in ['Admin', 'Staff']: return "Unauthorized", 403
-    try:
-        # Assign adoption to processing staff (ER compliance: assignment = Staff_ID set)
-        staff_id = session.get('staff_id')
-        db.session.execute(text("UPDATE ADOPTION SET Staff_ID = :s_id WHERE Adoption_ID = :id"), {'id': id, 's_id': staff_id})
-        
-        db.session.execute(text("UPDATE ANIMAL SET Adoption_Status = 'Processing' WHERE Animal_ID = (SELECT Animal_ID FROM ADOPTION WHERE Adoption_ID = :id)"), {'id': id})
-        
-        db.session.commit()
-        flash("Adoption approved and assigned to your processing log.", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash(f"Error: {e}", "error")
-    return redirect(request.referrer)
-
-@app.route('/adoption/reject/<int:id>', methods=['POST'])
-def reject_adoption(id):
-    if 'staff_id' not in session: return redirect(url_for('login'))
-    if session.get('role_name') not in ['Admin', 'Staff']: return "Unauthorized", 403
-    try:
-        db.session.execute(text("UPDATE ANIMAL SET Adoption_Status = 'Available' WHERE Animal_ID = (SELECT Animal_ID FROM ADOPTION WHERE Adoption_ID = :id)"), {'id': id})
-        # Delete the adoption record (reject = remove from pipeline)
-        db.session.execute(text("DELETE FROM ADOPTION WHERE Adoption_ID = :id"), {'id': id})
-        db.session.commit()
-        flash("Adoption request rejected and pet set back to available.", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash(f"Error: {e}", "error")
-    return redirect(request.referrer)
 
 @app.route('/seed_passwords')
 def seed_passwords():

@@ -66,6 +66,11 @@
                                 <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full {% if animal.adoption_status == 'Available' %}bg-secondary-container text-on-secondary-container{% else %}bg-surface-container-high text-on-surface-variant{% endif %} text-[11px] font-bold">
                                     {{ animal.adoption_status | upper if animal.adoption_status else 'UNKNOWN' }}
                                 </span>
+                                {% if animal.adoption_status == 'Available' %}
+                                <a href="#adoption-process" class="ml-4 px-4 py-1.5 bg-blue-600 text-white rounded-xl text-[10px] font-bold hover:bg-blue-700 transition-all shadow-md">
+                                    Start Adoption
+                                </a>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -73,8 +78,71 @@
             </div>
         </div>
 
+        {% if animal.adoption_status == 'Available' %}
+        <!-- Integrated Adoption Card -->
+        <div id="adoption-process" class="bg-white p-8 rounded-2xl border border-blue-100 mt-6 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                    <span class="material-symbols-outlined">assignment_ind</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 leading-tight">Process Adoption</h3>
+                    <p class="text-xs text-gray-500 font-medium">Finalize the placement for {{ animal.name }}</p>
+                </div>
+            </div>
+
+            <form action="{{ url_for('adopt_animal_direct', id=animal.animal_id) }}" method="POST" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Select Adopter *</label>
+                        <div class="relative">
+                            <input list="adopter-options" name="adopter_display" id="adopter_search" 
+                                   placeholder="Search by name or ID..." 
+                                   class="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all shadow-sm"
+                                   onchange="syncAdopterId(this.value)">
+                            <datalist id="adopter-options">
+                                {% for adopter in adopters %}
+                                <option value="{{ adopter.f_name }} {{ adopter.l_name }} (ID: {{ adopter.adopter_id }})">
+                                {% endfor %}
+                            </datalist>
+                            <input type="hidden" name="adopter_id" id="adopter_id_val">
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Adoption Fee (₹) *</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400 font-bold text-sm">₹</div>
+                            <input type="number" name="fee" required placeholder="0.00" step="0.01"
+                                   class="block w-full pl-9 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all shadow-sm">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pt-2">
+                    <button type="submit" class="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg hover:bg-blue-700 hover:shadow-blue-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-lg">check_circle</span>
+                        Confirm Adoption Placement
+                    </button>
+                    <p class="text-[10px] text-center text-gray-400 mt-4 font-medium uppercase tracking-tighter">
+                        This action will permanently update the pet's status to 'Adopted' and trigger financial logging.
+                    </p>
+                </div>
+            </form>
+        </div>
+        
+        <script>
+        function syncAdopterId(val) {
+            const match = val.match(/\(ID: (\d+)\)$/);
+            if (match) {
+                document.getElementById('adopter_id_val').value = match[1];
+            }
+        }
+        </script>
+        {% endif %}
+
         <!-- Medical Records Timeline -->
-        <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+        <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm mt-6">
             <h3 class="font-headline font-bold text-[#41608c] mb-6">Medical History</h3>
             <div class="relative pl-6 space-y-6">
                 <div class="absolute left-[7px] top-2 bottom-2 w-px bg-outline-variant/15"></div>
