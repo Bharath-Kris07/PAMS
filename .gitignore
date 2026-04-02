@@ -1,4 +1,4 @@
-# Python
+# Python & Environments
 __pycache__/
 *.pyc
 *.pyo
@@ -6,38 +6,55 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
-
-# Environments
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 .env
+.env.local
+.env.*.local
+.flaskenv
 .venv
 venv/
 ENV/
+env/
+dist/
+build/
 
-# Flask
+# Flask & Web
 instance/
 .webassets-cache
+static/uploads/*
+!static/uploads/.gitkeep
 
 # Code Editors & OS
 .vscode/
 .idea/
+*.swp
+*.swo
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Local Logs & Temporary Files
+# Project Specific Logs & Temporary Files
 *.log
 error.txt
+pdf_content.txt
 *.bak
 *.tmp
-pdf_content.txt
+*.temp
+schema.txt
 
-# Local Utility Scripts (User Specific)
+# Local Utility Scripts (Personal/Sensitive)
 read_pdf.py
 read_pdf2.py
-schema.txt
 schema_dumper.py
 inject.py
 seed_passwords.py
+test_*.py
 
-# Local Assets
-static/uploads/*
-!static/uploads/.gitkeep
+# Database Backups & Dumps
+*.sql
+*.sqlite
+*.db
+mongo_dump/

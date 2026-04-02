@@ -25,32 +25,10 @@ mongo = PyMongo(app)
 # =======================
 # MONGODB HELPERS
 # =======================
-def create_notification(notif_type, message):
-    try:
-        mongo.db.notifications.insert_one({
-            'type': notif_type,
-            'message': message,
-            'created_at': datetime.now()
-        })
-    except Exception as e:
-        print(f"Error creating notification: {e}")
-
-def log_audit(staff_id, action, entity, details=""):
-    try:
-        mongo.db.audit_logs.insert_one({
-            'staff_id': staff_id,
-            'action': action,
-            'entity': entity,
-            'details': details,
-            'created_at': datetime.now()
-        })
-    except Exception as e:
-        print(f"Error logging audit: {e}")
-
 
 @app.before_request
 def require_login():
-    allowed_routes = ['login', 'static']
+    allowed_routes = ['login', 'static', 'seed_passwords']
     if request.endpoint and request.endpoint not in allowed_routes and 'staff_id' not in session:
         return redirect(url_for('login'))
 
@@ -223,65 +201,75 @@ def dashboard():
 @app.route('/admin/dashboard')
 def admin_dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
-    # Hard check for 'Admin' role
-    if session.get('role_name') != 'Admin':
-        return "Unauthorized", 403
+    if session.get('role_name') != 'Admin': return "Unauthorized", 403
         
-    try:
-        pets_q = text("""
-            SELECT a.*, b.Breed_Name, s.Species_Name 
-            FROM ANIMAL a
-            LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID
-            LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
-            LIMIT 50
-        """)
-        pets = db.session.execute(pets_q).fetchall()
+    # 1. Fetch Pets (Using explicit JOINs instead of views)
+    pets_result = db.session.execute(text("""
+        SELECT a.Animal_ID, a.Name, a.Gender, a.Adoption_Status, s.Species_Name AS Species 
+        FROM ANIMAL a 
+        LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID 
+        LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
+    """))
+    pets = [dict(zip([k.lower() for k in pets_result.keys()], row)) for row in pets_result.fetchall()]
+
+    # 2. Fetch Pending Adoptions (Status is derived: NULL Staff_ID = 'Pending')
+    adopt_result = db.session.execute(text("""
+        SELECT a.Adoption_ID, 'Pending' AS status, CONCAT(u.F_Name, ' ', u.L_Name) AS Adopter_Name, p.Name AS Pet_Name 
+        FROM ADOPTION a 
+        JOIN ADOPTER u ON a.Adopter_ID = u.Adopter_ID 
+        JOIN ANIMAL p ON a.Animal_ID = p.Animal_ID 
+        WHERE a.Staff_ID IS NULL
+    """))
+    pending_adoptions = [dict(zip([k.lower() for k in adopt_result.keys()], row)) for row in adopt_result.fetchall()]
+
+    # 3. Fetch Staff
+    staff_result = db.session.execute(text("""
+        SELECT s.Staff_ID, s.F_Name, s.L_Name, r.Role_Name 
+        FROM STAFF s 
+        LEFT JOIN ROLE r ON s.Role_ID = r.Role_ID
+    """))
+    staff_members = [dict(zip([k.lower() for k in staff_result.keys()], row)) for row in staff_result.fetchall()]
         
-        # Admin view integration for adoption requests
-        adoptions_q = text("SELECT * FROM view_admin_adoptions LIMIT 50")
-        adoptions = db.session.execute(adoptions_q).fetchall()
-        
-        staff_q = text("""
-            SELECT s.*, r.Role_Name 
-            FROM STAFF s
-            LEFT JOIN ROLE r ON s.Role_ID = r.Role_ID
-            LIMIT 50
-        """)
-        staff_list = db.session.execute(staff_q).fetchall()
-    except Exception as e:
-        pets, adoptions, staff_list = [], [], []
-        
-    return render_template('admin_dashboard.html', pets=pets, adoptions=adoptions, staff_list=staff_list)
+    return render_template('admin_dashboard.html', pets=pets, pending_adoptions=pending_adoptions, staff_members=staff_members)
+
 
 @app.route('/staff/dashboard')
 def staff_dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
-    # Hard check for 'Staff' role
-    if session.get('role_name') != 'Staff':
-        return "Unauthorized", 403
+    if session.get('role_name') != 'Staff': return "Unauthorized", 403
         
-    try:
-        search_term = request.args.get('q')
-        query_str = "SELECT * FROM view_staff_pets"
-        params = {}
-        
-        if search_term:
-            # Multi-field search across Breed_ID/Name and Species_ID/Name
-            query_str += " WHERE Breed_Name LIKE :term OR Species_Name LIKE :term"
-            params['term'] = f"%{search_term}%"
-            
-            if search_term.isdigit():
-                # Exact ID matches for numeric inputs
-                query_str += " OR Breed_ID = :exact_id OR Species_ID = :exact_id"
-                params['exact_id'] = int(search_term)
-        
-        query_str += " LIMIT 50"
-        pets = db.session.execute(text(query_str), params).fetchall()
-    except Exception as e:
-        pets = []
-        
-    return render_template('staff_dashboard.html', pets=pets)
+    search_term = request.args.get('q')
+    
+    # 1. Fetch Pets with Search Logic (No views needed)
+    query_str = """
+        SELECT a.Animal_ID, a.Name, a.Gender, a.Adoption_Status, s.Species_Name, b.Breed_Name 
+        FROM ANIMAL a
+        LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID
+        LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
+    """
+    params = {}
+    if search_term:
+        query_str += " WHERE b.Breed_Name LIKE :term OR s.Species_Name LIKE :term"
+        params['term'] = f"%{search_term}%"
+        if search_term.isdigit():
+            query_str += " OR b.Breed_ID = :exact_id OR s.Species_ID = :exact_id"
+            params['exact_id'] = int(search_term)
+    query_str += " LIMIT 50"
 
+    pets_result = db.session.execute(text(query_str), params)
+    pets = [dict(zip([k.lower() for k in pets_result.keys()], row)) for row in pets_result.fetchall()]
+
+    # 2. Fetch Pending Adoptions (Status is derived: NULL Staff_ID = 'Pending')
+    adopt_result = db.session.execute(text("""
+        SELECT a.Adoption_ID, 'Pending' AS status, CONCAT(u.F_Name, ' ', u.L_Name) AS Adopter_Name, p.Name AS Pet_Name 
+        FROM ADOPTION a 
+        JOIN ADOPTER u ON a.Adopter_ID = u.Adopter_ID 
+        JOIN ANIMAL p ON a.Animal_ID = p.Animal_ID 
+        WHERE a.Staff_ID IS NULL
+    """))
+    pending_adoptions = [dict(zip([k.lower() for k in adopt_result.keys()], row)) for row in adopt_result.fetchall()]
+        
+    return render_template('staff_dashboard.html', pets=pets, pending_adoptions=pending_adoptions)
 @app.route('/animal/delete/<int:id>', methods=['POST'])
 def delete_animal(id):
     # Action route security check - Placed directly at the top
@@ -291,8 +279,6 @@ def delete_animal(id):
     try:
         db.session.execute(text("DELETE FROM ANIMAL WHERE Animal_ID = :id"), {'id': id})
         db.session.commit()
-        log_audit(session.get('staff_id'), 'delete_animal', 'animal', f"Deleted animal ID {id}")
-        create_notification('system', f"Animal ID {id} was permanently deleted by admin.")
         flash("Animal deleted successfully.", "success")
     except Exception as e:
         db.session.rollback()
@@ -329,7 +315,6 @@ def login():
                     session['role_name'] = getattr(staff, 'Role_Name', None)
                     
                     flash(f"Welcome back, {staff.F_Name}!", "success")
-                    log_audit(staff_id, 'login', 'staff', f"Staff logged in as {session['role_name']}")
                     
                     if session['role_name'] == 'Admin':
                         return redirect(url_for('admin_dashboard'))
@@ -339,7 +324,6 @@ def login():
                         return redirect(url_for('dashboard'))
                 else:
                     flash("Invalid ID or Password.", "error")
-                    log_audit(staff_id, 'login_failed', 'staff', "Password mismatch or missing credentials")
             else:
                 flash("Invalid ID or Password.", "error")
         except (ValueError, TypeError):
@@ -348,9 +332,6 @@ def login():
 
 @app.route('/logout')
 def logout():
-    staff_id = session.get('staff_id')
-    if staff_id:
-        log_audit(staff_id, 'logout', 'staff', 'Staff logged out')
     session.clear() # Securely clear entire session payload
     flash("You have been logged out.", "success")
     return redirect(url_for('login'))
@@ -385,7 +366,6 @@ def profile():
                     {'$set': {'password_hash': hashed_pw}}
                 )
                 flash("Password updated successfully!", "success")
-                log_audit(staff_id, 'profile_password_change', 'staff_credential', "User updated their own password")
             else:
                 flash("Incorrect current password.", "error")
         except Exception as e:
@@ -444,8 +424,6 @@ def add_medical_record():
             })
             db.session.commit()
             
-            log_audit(session.get('staff_id'), 'add_medical_record', 'medical_record', f'Added treatment for Animal {animal_id}')
-            create_notification('medical', f'New medical record added for Animal ID {animal_id}')
             
             flash('Medical record added successfully.', 'success')
             return redirect(url_for('animal_profile', id=animal_id))
@@ -517,8 +495,6 @@ def add_animal():
             })
             db.session.commit()
             
-            log_audit(session.get('staff_id'), 'add_animal', 'animal', f"Added animal '{name}'")
-            create_notification('system', f"New animal added to shelter: {name}")
             
             flash(f"Animal '{name}' successfully added!", "success")
             return redirect(url_for('dashboard'))
@@ -561,8 +537,6 @@ def register_adopter():
                 
             db.session.commit()
             
-            log_audit(session.get('staff_id'), 'register_adopter', 'adopter', f"Registered {f_name} {l_name}")
-            create_notification('adoption', f"New adopter registered: {f_name} {l_name}")
             
             flash("Adopter registered successfully!", "success")
             if adopter_id:
@@ -655,6 +629,106 @@ def adopter_profile(id):
     
     return render_template('adopter_profile.html', adopter=adopter, phones=phones, adoptions=adoptions, total_fees=total_fees)
 
+@app.route('/animal/<int:id>/medical', methods=['GET', 'POST'])
+def view_medical_records(id):
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        treatment_name = request.form.get('treatment_name')
+        treatment_date = request.form.get('treatment_date')
+        notes = request.form.get('notes')
+        staff_id = session.get('staff_id')
+        
+        try:
+            db.session.execute(text("""
+                INSERT INTO MEDICAL_RECORD (Animal_ID, Staff_ID, Treatment, Treatment_Date, Notes)
+                VALUES (:a_id, :s_id, :name, :date, :notes)
+            """), {
+                'a_id': id,
+                's_id': staff_id,
+                'name': treatment_name,
+                'date': treatment_date,
+                'notes': notes
+            })
+            db.session.commit()
+            flash("Medical record logged successfully.", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error logging record: {e}", "error")
+        return redirect(url_for('view_medical_records', id=id))
+        
+    animal = db.session.execute(text("SELECT * FROM ANIMAL WHERE Animal_ID = :id"), {'id': id}).fetchone()
+    medical_records = db.session.execute(text("""
+        SELECT m.*, s.F_Name, s.L_Name 
+        FROM MEDICAL_RECORD m 
+        LEFT JOIN STAFF s ON m.Staff_ID = s.Staff_ID 
+        WHERE m.Animal_ID = :id 
+        ORDER BY m.Treatment_Date DESC
+    """), {'id': id}).fetchall()
+    
+    return render_template('medical_records.html', animal=animal, medical_records=medical_records)
+
+@app.route('/admin/financials')
+def financial_dashboard():
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    if session.get('role_name') != 'Admin': return "Unauthorized", 403
+    
+    payments = db.session.execute(text("""
+        SELECT p.*, ad.F_Name, ad.L_Name, ani.Name as Pet_Name
+        FROM PAYMENT p
+        JOIN ADOPTION a ON p.Adoption_ID = a.Adoption_ID
+        JOIN ADOPTER ad ON a.Adopter_ID = ad.Adopter_ID
+        JOIN ANIMAL ani ON a.Animal_ID = ani.Animal_ID
+        ORDER BY p.Payment_Date DESC
+    """)).mappings().all()
+    
+    rev_res = db.session.execute(text("SELECT SUM(Amount) as rev FROM PAYMENT")).fetchone()
+    total_revenue = float(rev_res.rev) if rev_res and rev_res.rev else 0.0
+    
+    return render_template('financials.html', payments=payments, total_revenue=total_revenue)
+
+@app.route('/admin/adoption/<int:id>/pay', methods=['POST'])
+def log_payment(id):
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    if session.get('role_name') != 'Admin': return "Unauthorized", 403
+    
+    amount = request.form.get('amount')
+    date = request.form.get('payment_date')
+    
+    try:
+        db.session.execute(text("""
+            INSERT INTO PAYMENT (Adoption_ID, Payment_Date, Amount) 
+            VALUES (:id, :date, :amount)
+        """), {'id': id, 'date': date, 'amount': amount})
+        db.session.commit()
+        flash("Payment logged successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error logging payment: {e}", "error")
+    return redirect(request.referrer)
+
+@app.route('/admin/adoption/<int:id>/return', methods=['POST'])
+def return_adoption(id):
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    if session.get('role_name') != 'Admin': return "Unauthorized", 403
+    
+    reason = request.form.get('return_reason')
+    date = request.form.get('return_date')
+    
+    try:
+        # Simplified: Single INSERT. Trigger handles Animal/Adoption status updates.
+        db.session.execute(text("""
+            INSERT INTO AdoptionReturn (Adoption_ID, Return_Date, Return_Reason) 
+            VALUES (:id, :date, :reason)
+        """), {'id': id, 'date': date, 'reason': reason})
+        
+        db.session.commit()
+        flash("Adoption return processed. Pet availability updated via database trigger.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error processing return: {e}", "error")
+    return redirect(request.referrer)
+
 @app.route('/admin/adopter/<int:id>/edit', methods=['GET', 'POST'])
 def edit_adopter(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
@@ -674,7 +748,6 @@ def edit_adopter(id):
             """), {'f': f_name, 'l': l_name, 'e': email, 'a': address, 'id': id})
             db.session.commit()
             flash("Adopter profile updated!", "success")
-            log_audit(session.get('staff_id'), 'edit_adopter', 'adopter', f"Updated ID {id}")
             return redirect(url_for('adopter_profile', id=id))
         except Exception as e:
             db.session.rollback()
@@ -698,7 +771,6 @@ def add_phone(id):
                          {'id': id, 'phone': phone})
         db.session.commit()
         flash("Contact method added!", "success")
-        log_audit(session.get('staff_id'), 'add_phone', 'adopter_phone', f"Added {phone} to ID {id}")
     except Exception as e:
         db.session.rollback()
         flash(f"Error adding phone: {e}", "error")
@@ -715,53 +787,16 @@ def delete_phone(id, phone):
                          {'id': id, 'phone': phone})
         db.session.commit()
         flash("Contact method removed.", "success")
-        log_audit(session.get('staff_id'), 'delete_phone', 'adopter_phone', f"Removed {phone} from ID {id}")
     except Exception as e:
         db.session.rollback()
         flash(f"Error deleting phone: {e}", "error")
         
     return redirect(url_for('adopter_profile', id=id))
 
-@app.route('/notifications')
-def notifications():
-    if 'staff_id' not in session: return redirect(url_for('login'))
-    if session.get('role_name') != 'Admin': return 'Unauthorized', 403
-    try:
-        notifs = list(mongo.db.notifications.find().sort("created_at", -1).limit(50))
-    except Exception:
-        notifs = []
-    return render_template('notifications.html', notifications=notifs)
-
-@app.route('/audit-logs')
-def audit_logs():
-    if 'staff_id' not in session: return redirect(url_for('login'))
-    if session.get('role_name') != 'Admin': return 'Unauthorized', 403
-    try:
-        logs = list(mongo.db.audit_logs.find().sort("created_at", -1).limit(50))
-    except Exception:
-        logs = []
-        
-    enriched_logs = []
-    for log in logs:
-        staff_name = "Unknown"
-        s_id = log.get('staff_id')
-        if s_id:
-            try:
-                staff = db.session.execute(text("SELECT F_Name, L_Name FROM STAFF WHERE Staff_ID = :id"), {'id': s_id}).fetchone()
-                if staff:
-                    staff_name = f"{staff.F_Name} {staff.L_Name}"
-            except Exception:
-                pass
-        
-        enriched_logs.append({
-            'created_at': log.get('created_at'),
-            'action': log.get('action'),
-            'entity': log.get('entity'),
-            'details': log.get('details'),
-            'staff_name': staff_name
-        })
-        
-    return render_template('audit_logs.html', logs=enriched_logs)
+@app.route('/admin/logs')
+def admin_logs():
+    # Placeholder for potential future non-audit log features
+    return "This section is under maintenance.", 501
 
 
 
@@ -770,13 +805,9 @@ def delete_image(entity_type, entity_id):
     if 'staff_id' not in session: return redirect(url_for('login'))
     if session.get('role_name') != 'Admin': return "Unauthorized", 403
     try:
-        # User requested specific schema: entity_type and entity_id
-        mongo.db.photos.delete_one({'entity_type': entity_type, 'entity_id': entity_id})
-        # Note: Also keeping the previous MySQL_ID/type check just in case of schema legacy
+        # mongo.db.photos.delete_one({'entity_type': entity_type, 'entity_id': entity_id})
         mongo.db.photos.delete_one({'MySQL_ID': entity_id, 'type': entity_type})
-        
         flash("Image deleted.", "success")
-        log_audit(session.get('staff_id'), 'delete_image', entity_type, f"Deleted image for {entity_type} {entity_id}")
     except Exception as e:
         flash(f"Error deleting image: {e}", "error")
     return redirect(request.referrer)
@@ -786,10 +817,14 @@ def accept_adoption(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
     if session.get('role_name') not in ['Admin', 'Staff']: return "Unauthorized", 403
     try:
+        # Assign adoption to processing staff (ER compliance: assignment = Staff_ID set)
+        staff_id = session.get('staff_id')
+        db.session.execute(text("UPDATE ADOPTION SET Staff_ID = :s_id WHERE Adoption_ID = :id"), {'id': id, 's_id': staff_id})
+        
         db.session.execute(text("UPDATE ANIMAL SET Adoption_Status = 'Processing' WHERE Animal_ID = (SELECT Animal_ID FROM ADOPTION WHERE Adoption_ID = :id)"), {'id': id})
+        
         db.session.commit()
-        flash("Adoption accepted and pet status set to Processing.", "success")
-        log_audit(session.get('staff_id'), 'accept_adoption', 'adoption', f"Accepted adoption ID {id}")
+        flash("Adoption approved and assigned to your processing log.", "success")
     except Exception as e:
         db.session.rollback()
         flash(f"Error: {e}", "error")
@@ -800,12 +835,12 @@ def reject_adoption(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
     if session.get('role_name') not in ['Admin', 'Staff']: return "Unauthorized", 403
     try:
-        # User requested update instead of delete. Use status markers.
-        db.session.execute(text("UPDATE ADOPTION SET Status = 'Rejected' WHERE Adoption_ID = :id"), {'id': id})
+        # Update animal back to Available
         db.session.execute(text("UPDATE ANIMAL SET Adoption_Status = 'Available' WHERE Animal_ID = (SELECT Animal_ID FROM ADOPTION WHERE Adoption_ID = :id)"), {'id': id})
+        # Delete the adoption record (reject = remove from pipeline)
+        db.session.execute(text("DELETE FROM ADOPTION WHERE Adoption_ID = :id"), {'id': id})
         db.session.commit()
         flash("Adoption request rejected and pet set back to available.", "success")
-        log_audit(session.get('staff_id'), 'reject_adoption', 'adoption', f"Rejected adoption ID {id}")
     except Exception as e:
         db.session.rollback()
         flash(f"Error: {e}", "error")

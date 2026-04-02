@@ -32,6 +32,41 @@
     </form>
 </div>
 
+<!-- Adoption Requests Management (Staff View) -->
+<div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 mb-8">
+    <div class="px-8 py-5 flex items-center justify-between bg-gray-50 border-b border-gray-200">
+        <h3 class="font-bold text-gray-800">Pending Adoption Requests</h3>
+        <span class="text-xs font-bold text-blue-800 border border-blue-200 bg-blue-50 px-2 py-0.5 rounded uppercase tracking-wider">Staff Approval Mode</span>
+    </div>
+    <div class="p-6">
+        {% if pending_adoptions %}
+        <div class="space-y-4">
+            {% for adoption in pending_adoptions %}
+            <div class="p-4 rounded-xl border border-gray-200 bg-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-bold text-sm text-gray-900">{{ adoption.adopter_name }}</span>
+                        <span class="text-[10px] bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded uppercase">Request ID: {{ adoption.adoption_id }}</span>
+                    </div>
+                    <p class="text-xs text-gray-600 font-medium">Interested in: <span class="text-blue-800 font-bold">{{ adoption.pet_name }}</span></p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <form action="{{ url_for('accept_adoption', id=adoption.adoption_id) }}" method="POST">
+                        <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-xs shadow-sm hover:bg-emerald-700 transition-all">Approve</button>
+                    </form>
+                    <form action="{{ url_for('reject_adoption', id=adoption.adoption_id) }}" method="POST">
+                        <button type="submit" class="px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg font-bold text-xs hover:bg-red-600 hover:text-white transition-all">Reject</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-500 text-center py-6">No pending adoption requests to process.</p>
+        {% endif %}
+    </div>
+</div>
+
 <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
     <div class="px-8 py-5 flex items-center justify-between bg-gray-50 border-b border-gray-200">
         <h3 class="font-bold text-gray-800">Available Pets Overview</h3>
@@ -45,13 +80,13 @@
                     <span class="material-symbols-outlined">pets</span>
                 </div>
                 <div>
-                    <h4 class="font-bold text-gray-900 text-lg tracking-tight">{{ pet.Name }}</h4>
-                    <p class="text-sm text-gray-500 font-medium mt-0.5">{{ pet.Species_Name }} • {{ pet.Gender }}</p>
+                    <h4 class="font-bold text-gray-900 text-lg tracking-tight">{{ pet.name }}</h4>
+                    <p class="text-sm text-gray-500 font-medium mt-0.5">{{ pet.species_name }} • {{ pet.gender }}</p>
                 </div>
                 <!-- Note: No delete options included as per RBAC Standard Operations logic limitations -->
                 <div class="w-full flex items-center gap-2 mt-auto pt-4 border-t border-gray-200 text-center">
-                    <a href="{{ url_for('animal_profile', id=pet.Animal_ID) }}" class="flex-1 text-center py-2 bg-white text-gray-900 border border-gray-300 rounded font-semibold text-sm hover:bg-gray-100 hover:text-blue-700 transition-colors shadow-sm">
-                        Edit Record / Profile
+                    <a href="{{ url_for('animal_profile', id=pet.animal_id) }}" class="flex-1 text-center py-2 bg-white text-gray-900 border border-gray-300 rounded font-semibold text-sm hover:bg-gray-100 hover:text-blue-700 transition-colors shadow-sm">
+                        View Profile
                     </a>
                 </div>
             </div>

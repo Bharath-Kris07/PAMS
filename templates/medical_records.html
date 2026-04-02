@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Medical Records - {{ animal.Name }} - Haven Flow{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header Section -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <nav class="flex items-center gap-2 text-xs text-on-surface-variant mb-2">
+                <a href="{{ url_for('dashboard') }}" class="hover:text-primary cursor-pointer">Directory</a>
+                <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+                <a href="{{ url_for('animal_profile', id=animal.Animal_ID) }}" class="hover:text-primary cursor-pointer">{{ animal.Name }}</a>
+                <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+                <span class="text-primary font-semibold">Medical Records</span>
+            </nav>
+            <h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Health History: {{ animal.Name }}</h1>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold uppercase tracking-wider">ANM-{{ animal.Animal_ID }}</span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Records List (Span 2) -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                    <h3 class="font-bold text-gray-800 text-sm">Clinical Timeline</h3>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ medical_records|length }} Entries</span>
+                </div>
+                
+                <div class="p-6">
+                    <div class="relative pl-6 space-y-8">
+                        <div class="absolute left-[7px] top-2 bottom-2 w-px bg-gray-100"></div>
+                        
+                        {% for record in medical_records %}
+                        <div class="relative">
+                            <div class="absolute -left-[23px] top-2 w-3.5 h-3.5 rounded-full {% if loop.first %}bg-blue-600{% else %}bg-blue-200{% endif %} border-2 border-white shadow-sm"></div>
+                            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 hover:border-blue-200 transition-all group">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="text-base font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{{ record.Treatment }}</h4>
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase">{{ record.Treatment_Date.strftime('%b %d, %Y') if record.Treatment_Date else 'N/A' }}</span>
+                                </div>
+                                <p class="text-sm text-gray-600 leading-relaxed">{{ record.Notes }}</p>
+                                <div class="mt-4 pt-3 border-t border-gray-200/50 flex items-center gap-2">
+                                    <div class="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[8px] font-bold text-gray-600 uppercase">
+                                        {{ record.F_Name[0] if record.F_Name else '?' }}
+                                    </div>
+                                    <span class="text-[10px] text-gray-400 font-medium italic">Logged by {{ record.F_Name }} {{ record.L_Name }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-12">
+                            <span class="material-symbols-outlined text-4xl text-gray-200 mb-2">assignment_late</span>
+                            <p class="text-sm text-gray-400 font-medium">No medical records found for this animal.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Record Sidebar -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <h3 class="font-headline font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-600">add_moderator</span>
+                    Log Treatment
+                </h3>
+                
+                <form action="{{ url_for('view_medical_records', id=animal.Animal_ID) }}" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 px-1">Treatment Name</label>
+                        <input type="text" name="treatment_name" required placeholder="e.g. DHPP Vaccination"
+                               class="w-full px-4 py-2.5 bg-gray-50 border-transparent focus:bg-white focus:ring-1 focus:ring-blue-500 rounded-xl text-sm font-medium outline-none transition-all">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 px-1">Treatment Date</label>
+                        <input type="date" name="treatment_date" required 
+                               class="w-full px-4 py-2.5 bg-gray-50 border-transparent focus:bg-white focus:ring-1 focus:ring-blue-500 rounded-xl text-sm font-medium outline-none transition-all">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 px-1">Notes & Observations</label>
+                        <textarea name="notes" rows="4" required placeholder="Describe dosage, reaction, or follow-up needs..."
+                                  class="w-full px-4 py-2.5 bg-gray-50 border-transparent focus:bg-white focus:ring-1 focus:ring-blue-500 rounded-xl text-sm font-medium outline-none transition-all resize-none"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2 mt-4">
+                        <span class="material-symbols-outlined text-[18px]">save</span>
+                        Submit Record
+                    </button>
+                </form>
+            </div>
+
+            <!-- Notice Box -->
+            <div class="bg-amber-50 rounded-2xl p-5 border border-amber-100">
+                <div class="flex gap-3">
+                    <span class="material-symbols-outlined text-amber-600 text-xl">verified_user</span>
+                    <div>
+                        <h4 class="text-xs font-bold text-amber-900 uppercase tracking-wider">Clinical Accuracy</h4>
+                        <p class="text-[11px] text-amber-700 mt-1 leading-relaxed font-medium italic">
+                            All treatments must be verified by a licensed veterinarian. Ensure dosage information is accurate before submission.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

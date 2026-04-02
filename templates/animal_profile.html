@@ -12,9 +12,9 @@
         </nav>
         <h1 class="text-3xl font-bold font-headline text-on-surface tracking-tight">Animal Profile</h1>
     </div>
-    <a href="{{ url_for('add_medical_record', animal_id=animal.Animal_ID) }}" class="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dim text-on-primary px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all active:scale-95">
+    <a href="{{ url_for('view_medical_records', id=animal.Animal_ID) }}" class="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-dim text-on-primary px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all active:scale-95">
         <span class="material-symbols-outlined text-sm">monitor_heart</span>
-        Add Medical Record
+        Manage Medical History
     </a>
 </div>
 
