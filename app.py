@@ -260,9 +260,22 @@ def staff_dashboard():
         return "Unauthorized", 403
         
     try:
-        # Staff view integration for operational pet listing
-        pets_q = text("SELECT * FROM view_staff_pets LIMIT 50")
-        pets = db.session.execute(pets_q).fetchall()
+        search_term = request.args.get('q')
+        query_str = "SELECT * FROM view_staff_pets"
+        params = {}
+        
+        if search_term:
+            # Multi-field search across Breed_ID/Name and Species_ID/Name
+            query_str += " WHERE Breed_Name LIKE :term OR Species_Name LIKE :term"
+            params['term'] = f"%{search_term}%"
+            
+            if search_term.isdigit():
+                # Exact ID matches for numeric inputs
+                query_str += " OR Breed_ID = :exact_id OR Species_ID = :exact_id"
+                params['exact_id'] = int(search_term)
+        
+        query_str += " LIMIT 50"
+        pets = db.session.execute(text(query_str), params).fetchall()
     except Exception as e:
         pets = []
         

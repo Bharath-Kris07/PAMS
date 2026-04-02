@@ -17,6 +17,21 @@
     </div>
 </div>
 
+<!-- Search Bar Logic (Staff View) -->
+<div class="mb-6">
+    <form action="{{ url_for('staff_dashboard') }}" method="GET" class="relative max-w-xl">
+        <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+            <span class="material-symbols-outlined text-gray-400 text-lg">search</span>
+        </div>
+        <input name="q" value="{{ request.args.get('q', '') }}" 
+               class="block w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm placeholder-gray-400" 
+               placeholder="Search by Breed ID/Name or Species ID/Name..." type="text"/>
+        <button type="submit" class="absolute right-2.5 top-1.5 px-4 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors">
+            Search
+        </button>
+    </form>
+</div>
+
 <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
     <div class="px-8 py-5 flex items-center justify-between bg-gray-50 border-b border-gray-200">
         <h3 class="font-bold text-gray-800">Available Pets Overview</h3>

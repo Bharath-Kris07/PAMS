@@ -26,14 +26,8 @@
 
 <!-- TopNavBar -->
 <nav class="fixed top-0 w-full z-50 bg-white bg-opacity-90 backdrop-filter backdrop-blur-md shadow-sm flex items-center justify-between px-6 py-3">
-    <div class="flex items-center gap-8 flex-1">
+    <div class="flex items-center gap-8">
         <a href="{{ url_for('dashboard') }}" class="text-xl font-bold tracking-tight text-blue-800 font-headline">Haven Flow</a>
-        <div class="relative w-full max-w-md ml-4">
-            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <span class="material-symbols-outlined text-gray-400 text-sm">search</span>
-            </div>
-            <input class="block w-full pl-10 pr-4 py-2 bg-gray-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all placeholder-gray-500" placeholder="Search by Adopter_ID..." type="text"/>
-        </div>
     </div>
     <div class="flex items-center gap-4">
         {% if session.get('role_name') == 'Admin' %}
