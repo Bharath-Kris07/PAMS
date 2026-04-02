@@ -431,7 +431,8 @@ def add_medical_record():
             return redirect(url_for('animal_profile', id=animal_id))
         except Exception as e:
             db.session.rollback()
-            flash(f'Error adding record: {str(e)}', 'error')
+            clean_error = str(e).split('[SQL:')[0].strip()
+            flash(clean_error, 'error')
             
     animal_res = db.session.execute(text("SELECT Animal_ID, Name FROM ANIMAL"))
     animals = [dict(zip([k.lower() for k in animal_res.keys()], row)) for row in animal_res.fetchall()]
@@ -705,7 +706,8 @@ def view_medical_records(id):
             flash("Medical record logged successfully.", "success")
         except Exception as e:
             db.session.rollback()
-            flash(f"Error logging record: {e}", "error")
+            clean_error = str(e).split('[SQL:')[0].strip()
+            flash(clean_error, 'error')
         return redirect(url_for('view_medical_records', id=id))
         
     animal_res = db.session.execute(text("SELECT * FROM ANIMAL WHERE Animal_ID = :id"), {'id': id})
