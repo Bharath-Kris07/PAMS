@@ -191,7 +191,6 @@ def admin_dashboard():
         
     search_term = request.args.get('q')
     
-    # 1. Querying the View instead of raw tables!
     query_str = """
         SELECT Animal_ID, Name, Gender, Adoption_Status, Species_Name AS Species 
         FROM view_staff_pets
@@ -199,7 +198,6 @@ def admin_dashboard():
     
     params = {}
     
-    # 2. Applying the search filter directly to the View
     if search_term:
         query_str += " WHERE (Name LIKE :term OR Breed_Name LIKE :term OR Species_Name LIKE :term"
         params['term'] = f"%{search_term}%"
