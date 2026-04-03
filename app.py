@@ -238,13 +238,41 @@ def admin_dashboard():
     pets = [dict(zip([k.lower() for k in pets_result.keys()], row)) for row in pets_result.fetchall()]
 
     staff_result = db.session.execute(text("""
-        SELECT s.Staff_ID, s.F_Name, s.L_Name, r.Role_Name 
+        SELECT s.Staff_ID, s.F_Name, s.L_Name, r.Role_Name as Role 
         FROM STAFF s 
         LEFT JOIN ROLE r ON s.Role_ID = r.Role_ID
     """))
     staff_members = [dict(zip([k.lower() for k in staff_result.keys()], row)) for row in staff_result.fetchall()]
         
     return render_template('admin_dashboard.html', pets=pets, staff_members=staff_members)
+
+@app.route('/admin/staff/<int:id>/update_role', methods=['POST'])
+def update_staff_role(id):
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    if session.get('role_name') != 'Admin': return "Unauthorized", 403
+    
+    new_role = request.form.get('role')
+    
+    try:
+        # Added extra safeguards in the WHERE clause: Staff cannot update themselves or other Admins
+        db.session.execute(text("""
+            UPDATE STAFF 
+            SET Role_ID = (SELECT Role_ID FROM ROLE WHERE Role_Name = :role) 
+            WHERE Staff_ID = :id 
+            AND Staff_ID != :current_id
+            AND Role_ID NOT IN (SELECT Role_ID FROM ROLE WHERE Role_Name = 'Admin')
+        """), {
+            'role': new_role, 
+            'id': id, 
+            'current_id': session.get('staff_id')
+        })
+        db.session.commit()
+        flash(f"Staff role updated successfully to {new_role}!", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Database error updating role: {str(e)}", "error")
+        
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/staff/dashboard')
 def staff_dashboard():

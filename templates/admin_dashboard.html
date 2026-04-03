@@ -85,7 +85,19 @@
                         </div>
                         <div>
                             <p class="font-semibold text-sm text-gray-900">{{ staff.f_name }} {{ staff.l_name }}</p>
-                            <p class="text-xs font-medium {{ 'text-blue-600' if staff.role_name == 'Admin' else 'text-gray-500' }}">{{ staff.role_name if staff.role_name else 'Unassigned' }}</p>
+                            {% if session.get('role_name') == 'Admin' and staff.staff_id != session.get('staff_id') and staff.role != 'Admin' %}
+                            <form action="{{ url_for('update_staff_role', id=staff.staff_id) }}" method="POST" class="mt-1">
+                                <select name="role" onchange="this.form.submit()" class="text-[10px] font-bold py-1 px-2 border-gray-200 rounded-lg bg-gray-50 text-gray-600 focus:ring-0 focus:border-blue-500 outline-none cursor-pointer hover:bg-white transition-all">
+                                    <option value="Admin" {% if staff.role == 'Admin' %}selected{% endif %}>Admin</option>
+                                    <option value="Staff" {% if staff.role == 'Staff' %}selected{% endif %}>Staff</option>
+                                    <option value="Shelter Manager" {% if staff.role == 'Shelter Manager' %}selected{% endif %}>Shelter Manager</option>
+                                    <option value="Veterinarian" {% if staff.role == 'Veterinarian' %}selected{% endif %}>Veterinarian</option>
+                                    <option value="Unassigned" {% if staff.role == 'Unassigned' or not staff.role %}selected{% endif %}>Unassigned</option>
+                                </select>
+                            </form>
+                            {% else %}
+                            <p class="text-xs font-medium {{ 'text-blue-600' if staff.role == 'Admin' else 'text-gray-500' }} mt-1">{{ staff.role if staff.role else 'Unassigned' }}</p>
+                            {% endif %}
                         </div>
                         <div class="ml-auto flex items-center gap-2 text-right">
                             <div class="flex items-center gap-2">
