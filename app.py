@@ -273,43 +273,36 @@ def staff_dashboard():
 def all_animals():
     if 'staff_id' not in session: return redirect(url_for('login'))
 
-    # 1. Querying the View instead of raw tables!
     query = text("SELECT * FROM view_all_animals")
 
-    # 2. Execute query and extract keys
     result = db.session.execute(query)
     columns = result.keys()
 
-    # 3. Safely map to dictionaries so Jinja can read it
     animals = [dict(zip([k.lower() for k in columns], row)) for row in result.fetchall()]
 
     return render_template('all_animals.html', animals=animals)
 def delete_animal(id):
-    # Standard admin security check
+
     if 'staff_id' not in session or session.get('role_name') != 'Admin':
         flash("Unauthorized access.", "error")
         return redirect(url_for('login'))
         
     try:
-        # 1. Delete associated payments (via Adoption)
+    
         db.session.execute(text("""
             DELETE FROM PAYMENT 
             WHERE Adoption_ID IN (SELECT Adoption_ID FROM ADOPTION WHERE Animal_ID = :id)
         """), {'id': id})
-        
-        # 2. Delete associated adoption returns (via Adoption)
+
         db.session.execute(text("""
             DELETE FROM AdoptionReturn 
             WHERE Adoption_ID IN (SELECT Adoption_ID FROM ADOPTION WHERE Animal_ID = :id)
         """), {'id': id})
-        
-        # 3. Delete associated adoptions
+
         db.session.execute(text("DELETE FROM ADOPTION WHERE Animal_ID = :id"), {'id': id})
         
-        # 4. Delete associated medical records (Resolves the 1451 constraint error)
         db.session.execute(text("DELETE FROM MEDICAL_RECORD WHERE Animal_ID = :id"), {'id': id})
         
-        # 5. Finally, delete the animal itself
         db.session.execute(text("DELETE FROM ANIMAL WHERE Animal_ID = :id"), {'id': id})
         
         db.session.commit()
@@ -317,7 +310,7 @@ def delete_animal(id):
     except Exception as e:
         db.session.rollback()
         flash(f"Database error deleting animal: {str(e)}", "error")
-        print(f"Delete animal failed: {str(e)}") # For debugging
+        print(f"Delete animal failed: {str(e)}")
         
     # Redirect to the main directory
     return redirect(url_for('all_animals'))
