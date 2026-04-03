@@ -134,7 +134,7 @@ CREATE TABLE breed (
 -- 2. DATABASE VIEWS
 -- ==========================================
 
--- VIEW 1: Dynamic Animal Status 
+-- VIEW 1:
 CREATE OR REPLACE VIEW view_admin_adoptions AS
 SELECT 
     a.Adoption_ID,
@@ -150,7 +150,7 @@ JOIN ANIMAL p ON a.Animal_ID = p.Animal_ID
 JOIN ADOPTER u ON a.Adopter_ID = u.Adopter_ID
 LEFT JOIN AdoptionReturn ret ON a.Adoption_ID = ret.Adoption_ID;
 
--- VIEW 2: Adopter Financial Summary 
+-- VIEW 2: 
 CREATE OR REPLACE VIEW view_staff_pets AS
 SELECT 
     a.Animal_ID,
