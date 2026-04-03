@@ -281,6 +281,7 @@ def all_animals():
     animals = [dict(zip([k.lower() for k in columns], row)) for row in result.fetchall()]
 
     return render_template('all_animals.html', animals=animals)
+@app.route('/admin/animal/<int:id>/delete', methods=['POST'])
 def delete_animal(id):
 
     if 'staff_id' not in session or session.get('role_name') != 'Admin':
