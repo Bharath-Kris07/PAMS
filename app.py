@@ -235,20 +235,22 @@ def admin_dashboard():
 @app.route('/animals/all')
 def all_animals():
     if 'staff_id' not in session: return redirect(url_for('login'))
-    
-    try:
-        query = text("""
-            SELECT a.*, b.Breed_Name, s.Species_Name 
-            FROM ANIMAL a 
-            LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID 
-            LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
-        """)
-        result = db.session.execute(query).fetchall()
-        animals = [dict(zip([k.lower() for k in result.keys()], row)) for row in result]
-    except Exception as e:
-        flash(f"Error fetching animal records: {str(e)}", "error")
-        animals = []
-        
+
+    # Strict Raw SQL Query
+    query = text("""
+        SELECT a.*, b.Breed_Name, s.Species_Name 
+        FROM ANIMAL a 
+        LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID 
+        LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
+    """)
+
+    # Execute query and extract keys BEFORE fetching all rows
+    result = db.session.execute(query)
+    columns = result.keys()
+
+    # Safely map to dictionaries
+    animals = [dict(zip([k.lower() for k in columns], row)) for row in result.fetchall()]
+
     return render_template('all_animals.html', animals=animals)
 @app.route('/animal/delete/<int:id>', methods=['POST'])
 def delete_animal(id):
