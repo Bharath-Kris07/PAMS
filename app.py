@@ -304,19 +304,44 @@ def all_animals():
     animals = [dict(zip([k.lower() for k in columns], row)) for row in result.fetchall()]
 
     return render_template('all_animals.html', animals=animals)
-@app.route('/animal/delete/<int:id>', methods=['POST'])
+@app.route('/admin/animal/<int:id>/delete', methods=['POST'])
 def delete_animal(id):
-    if session.get('role_name') != 'Admin':
-        return "Unauthorized", 403
-    
+    # Standard admin security check
+    if 'staff_id' not in session or session.get('role_name') != 'Admin':
+        flash("Unauthorized access.", "error")
+        return redirect(url_for('login'))
+        
     try:
+        # 1. Delete associated payments (via Adoption)
+        db.session.execute(text("""
+            DELETE FROM PAYMENT 
+            WHERE Adoption_ID IN (SELECT Adoption_ID FROM ADOPTION WHERE Animal_ID = :id)
+        """), {'id': id})
+        
+        # 2. Delete associated adoption returns (via Adoption)
+        db.session.execute(text("""
+            DELETE FROM AdoptionReturn 
+            WHERE Adoption_ID IN (SELECT Adoption_ID FROM ADOPTION WHERE Animal_ID = :id)
+        """), {'id': id})
+        
+        # 3. Delete associated adoptions
+        db.session.execute(text("DELETE FROM ADOPTION WHERE Animal_ID = :id"), {'id': id})
+        
+        # 4. Delete associated medical records (Resolves the 1451 constraint error)
+        db.session.execute(text("DELETE FROM MEDICAL_RECORD WHERE Animal_ID = :id"), {'id': id})
+        
+        # 5. Finally, delete the animal itself
         db.session.execute(text("DELETE FROM ANIMAL WHERE Animal_ID = :id"), {'id': id})
+        
         db.session.commit()
-        flash("Animal deleted successfully.", "success")
+        flash("Animal and all associated records deleted successfully.", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f"Error deleting animal: {str(e)}", "error")
-    return redirect(url_for('admin_dashboard'))
+        flash(f"Database error deleting animal: {str(e)}", "error")
+        print(f"Delete animal failed: {str(e)}") # For debugging
+        
+    # Redirect to the main directory
+    return redirect(url_for('all_animals'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
