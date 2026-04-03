@@ -729,35 +729,26 @@ def adopt_animal(id):
     raw_fee = request.form.get('fee', '0')
     staff_id = session.get('staff_id')
     
-    # Safe float conversion to prevent silent transaction rollbacks
+    # Safe float conversion ensures the trigger gets a valid number
     try:
         fee = float(raw_fee) if raw_fee and raw_fee.strip() != '' else 0.0
     except ValueError:
         fee = 0.0
     
     try:
-        # 1. Insert Adoption Record
+        # We ONLY insert into ADOPTION. 
+        # The MySQL trigger 'after_adoption_insert' will automatically catch this and log the PAYMENT.
         db.session.execute(text("""
             INSERT INTO ADOPTION (Animal_ID, Adopter_ID, Staff_ID, Adoption_Date, Fee) 
             VALUES (:an_id, :ad_id, :st_id, CURRENT_DATE, :fee)
         """), {'an_id': id, 'ad_id': adopter_id, 'st_id': staff_id, 'fee': fee})
-        
-        # 2. Retrieve the new Adoption_ID
-        adopt_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
-        
-        # 3. Explicitly Log Payment if a fee was collected
-        if fee > 0:
-            db.session.execute(text("""
-                INSERT INTO PAYMENT (Adoption_ID, Payment_Date, Amount) 
-                VALUES (:ad_id, CURRENT_DATE, :amount)
-            """), {'ad_id': adopt_id, 'amount': fee})
             
         db.session.commit()
-        flash("Adoption and payment logged successfully!", "success")
+        flash("Adoption logged successfully! Payment handled via database trigger.", "success")
     except Exception as e:
         db.session.rollback()
         flash(f"Database error: {str(e)}", "error")
-        print(f"Adoption failed: {str(e)}") # Prints to terminal for debugging
+        print(f"Adoption failed: {str(e)}") 
         
     return redirect(url_for('animal_profile', id=id))
 
