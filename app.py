@@ -528,7 +528,7 @@ def add_animal():
                                    {'bn': breed_name, 'sid': species_id})
                 breed_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
 
-            # 3. Insert Animal (Status is derived, so we omit Adoption_Status column)
+            # Insert Animal (Status is derived, so we omit Adoption_Status column)
             dob = datetime.strptime(dob_str, '%Y-%m-%d').date() if dob_str else None
             insert_animal_q = text("""
                 INSERT INTO ANIMAL (Name, Gender, DateOfBirth, Breed_ID)
@@ -542,7 +542,7 @@ def add_animal():
             })
             animal_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
 
-            # 4. Handle Optional Photo (MongoDB)
+            # Handle Optional Photo (MongoDB)
             if 'photo' in request.files:
                 file = request.files['photo']
                 if file.filename != '':
