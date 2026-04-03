@@ -184,31 +184,27 @@ def dashboard():
     return render_template('dashboard.html', animals=available_animals)
 
 @app.route('/admin/dashboard')
+@app.route('/admin/dashboard')
 def admin_dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
     if session.get('role_name') != 'Admin': return "Unauthorized", 403
         
     search_term = request.args.get('q')
+    
+    # 1. Querying the View instead of raw tables!
     query_str = """
-        SELECT a.Animal_ID, a.Name, a.Gender, 
-               'Available' AS Adoption_Status, 
-               s.Species_Name AS Species 
-        FROM ANIMAL a 
-        LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID 
-        LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
-        WHERE a.Animal_ID NOT IN (
-            SELECT ad.Animal_ID 
-            FROM ADOPTION ad 
-            LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
-            WHERE ar.Return_Date IS NULL
-        )
+        SELECT Animal_ID, Name, Gender, Adoption_Status, Species_Name AS Species 
+        FROM view_staff_pets
     """
+    
     params = {}
+    
+    # 2. Applying the search filter directly to the View
     if search_term:
-        query_str += " AND (a.Name LIKE :term OR b.Breed_Name LIKE :term OR s.Species_Name LIKE :term"
+        query_str += " WHERE (Name LIKE :term OR Breed_Name LIKE :term OR Species_Name LIKE :term"
         params['term'] = f"%{search_term}%"
         if search_term.isdigit():
-            query_str += " OR a.Animal_ID = :exact_id"
+            query_str += " OR Animal_ID = :exact_id"
             params['exact_id'] = int(search_term)
         query_str += ")"
 
@@ -223,7 +219,6 @@ def admin_dashboard():
     staff_members = [dict(zip([k.lower() for k in staff_result.keys()], row)) for row in staff_result.fetchall()]
         
     return render_template('admin_dashboard.html', pets=pets, staff_members=staff_members)
-
 @app.route('/admin/staff/<int:id>/update_role', methods=['POST'])
 def update_staff_role(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
