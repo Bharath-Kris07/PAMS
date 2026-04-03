@@ -135,34 +135,42 @@ CREATE TABLE breed (
 -- ==========================================
 
 -- VIEW 1: Dynamic Animal Status 
-CREATE VIEW view_admin_adoptions AS
+CREATE OR REPLACE VIEW view_admin_adoptions AS
 SELECT 
     a.Adoption_ID,
     p.Name AS Pet_Name,
     CONCAT(u.F_Name, ' ', u.L_Name) AS Adopter_Name,
-    p.Adoption_Status,
+    CASE 
+        WHEN ret.Return_ID IS NOT NULL THEN 'Returned'
+        ELSE 'Adopted'
+    END AS Adoption_Status,
     a.Adoption_Date
-FROM adoption a
-JOIN animal p ON a.Animal_ID = p.Animal_ID
-JOIN adopter u ON a.Adopter_ID = u.Adopter_ID;
+FROM ADOPTION a
+JOIN ANIMAL p ON a.Animal_ID = p.Animal_ID
+JOIN ADOPTER u ON a.Adopter_ID = u.Adopter_ID
+LEFT JOIN AdoptionReturn ret ON a.Adoption_ID = ret.Adoption_ID;
 
 -- VIEW 2: Adopter Financial Summary 
-CREATE VIEW view_staff_pets AS
+CREATE OR REPLACE VIEW view_staff_pets AS
 SELECT 
     a.Animal_ID,
     a.Name,
     a.Gender,
     a.DateOfBirth,
-    a.Adoption_Status,
+    'Available' AS Adoption_Status,
     a.Breed_ID,
     b.Breed_Name,
     b.Species_ID,
     s.Species_Name
-FROM animal a
-LEFT JOIN breed b ON a.Breed_ID = b.Breed_ID
-LEFT JOIN species s ON b.Species_ID = s.Species_ID
-WHERE a.Adoption_Status IN ('Available', 'Pending');
-
+FROM ANIMAL a
+LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID
+LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
+WHERE a.Animal_ID NOT IN (
+    SELECT ad.Animal_ID 
+    FROM ADOPTION ad 
+    LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
+    WHERE ar.Return_Date IS NULL
+);
 
 -- ==========================================
 -- 3. DATABASE TRIGGERS
