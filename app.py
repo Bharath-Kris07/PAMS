@@ -269,37 +269,21 @@ def staff_dashboard():
     pets_result = db.session.execute(query)
     pets = [dict(zip([k.lower() for k in pets_result.keys()], row)) for row in pets_result.fetchall()]
     return render_template('staff_dashboard.html', pets=pets)
-
 @app.route('/animals/all')
 def all_animals():
     if 'staff_id' not in session: return redirect(url_for('login'))
 
-    # Strict Raw SQL Query with Derived Status
-    query = text("""
-        SELECT a.*, b.Breed_Name, s.Species_Name,
-               CASE 
-                   WHEN a.Animal_ID IN (
-                       SELECT ad.Animal_ID 
-                       FROM ADOPTION ad 
-                       LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
-                       WHERE ar.Return_Date IS NULL
-                   ) THEN 'Adopted' 
-                   ELSE 'Available' 
-               END AS Adoption_Status
-        FROM ANIMAL a 
-        LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID 
-        LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
-    """)
+    # 1. Querying the View instead of raw tables!
+    query = text("SELECT * FROM view_all_animals")
 
-    # Execute query and extract keys BEFORE fetching all rows
+    # 2. Execute query and extract keys
     result = db.session.execute(query)
     columns = result.keys()
 
-    # Safely map to dictionaries
+    # 3. Safely map to dictionaries so Jinja can read it
     animals = [dict(zip([k.lower() for k in columns], row)) for row in result.fetchall()]
 
     return render_template('all_animals.html', animals=animals)
-@app.route('/admin/animal/<int:id>/delete', methods=['POST'])
 def delete_animal(id):
     # Standard admin security check
     if 'staff_id' not in session or session.get('role_name') != 'Admin':
