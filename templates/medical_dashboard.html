@@ -15,7 +15,6 @@
             <thead>
                 <tr class="bg-surface-container-low">
                     <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Animal</th>
-                    <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Status</th>
                     <th class="px-8 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Last Treatment</th>
                     <th class="px-8 py-4 text-right text-xs font-bold text-on-surface-variant uppercase tracking-wider">Action</th>
                 </tr>
@@ -37,11 +36,6 @@
                         </div>
                     </td>
                     <td class="px-8 py-5">
-                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full {% if animal.adoption_status == 'Available' %}bg-secondary-container text-on-secondary-container{% else %}bg-surface-container-high text-on-surface-variant{% endif %} text-[11px] font-bold">
-                            {{ animal.adoption_status | upper }}
-                        </span>
-                    </td>
-                    <td class="px-8 py-5">
                         {% if animal.last_treatment_date %}
                             <div class="flex flex-col">
                                 <span class="font-semibold text-on-surface">{{ animal.last_treatment_name }}</span>
@@ -57,7 +51,7 @@
                 </tr>
             {% else %}
                 <tr>
-                    <td colspan="4" class="px-8 py-10 text-center">
+                    <td colspan="3" class="px-8 py-10 text-center">
                         <p class="text-sm font-bold text-on-surface mt-1">All Clear</p>
                         <p class="text-xs text-on-surface-variant">Every animal is up to date on their treatments.</p>
                     </td>
