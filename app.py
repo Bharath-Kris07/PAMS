@@ -10,22 +10,17 @@ from sqlalchemy import text
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-# The exact DB URI required by the user
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:@localhost/pams_db'
 app.config['SQLALCHEMY_ECHO'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = 'haven_flow_secret' # Needed for flash messages
+app.secret_key = 'haven_flow_secret' 
 
 db = SQLAlchemy(app)
 
-# MongoDB Configuration
 app.config['MONGO_URI'] = 'mongodb://localhost:27017/pams_photos'
 mongo = PyMongo(app)
 
-# =======================
-# MONGODB HELPERS
-# =======================
-
+# MongoDB interactions handled separately from SQL
 @app.before_request
 def require_login():
     allowed_routes = ['login', 'static', 'seed_passwords']
@@ -39,10 +34,6 @@ def inject_staff():
         staff = db.session.execute(query, {'id': session['staff_id']}).fetchone()
         return dict(current_staff=staff)
     return dict(current_staff=None)
-
-# =======================
-# JINJA2 CUSTOM FILTERS
-# =======================
 
 @app.template_filter('in_rupees')
 def in_rupees(value):
@@ -65,10 +56,6 @@ def in_mobile(value):
         return f"+91 {val[:5]} {val[5:]}"
     return value
 
-
-# =======================
-# MONGODB IMAGE ROUTING
-# =======================
 
 @app.route('/upload_image', methods=['POST'])
 def upload_image():
@@ -130,10 +117,6 @@ def serve_image(entity_type, entity_id):
         
     return redirect('https://placehold.co/400x400/eeeeee/a0aec0?text=No+Photo')
 
-# =======================
-# RAW SQL REPORTING ROUTES
-# =======================
-
 @app.route('/reports/medical/<int:animal_id>')
 def report_medical(animal_id):
     query = """
@@ -173,14 +156,9 @@ ORDER BY Available_Count DESC
     return render_template('reports.html', report_type='species', data=result, query_text=query.strip())
 
 
-# =======================
-# FLASK ROUTING LOGIC
-# =======================
-
 @app.route('/')
 def dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
-    """Main dashboard showing available animals"""
     role_name = session.get('role_name')
     if role_name == 'Admin':
         return redirect(url_for('admin_dashboard'))
@@ -328,7 +306,6 @@ def all_animals():
     return render_template('all_animals.html', animals=animals)
 @app.route('/animal/delete/<int:id>', methods=['POST'])
 def delete_animal(id):
-    # Action route security check - Placed directly at the top
     if session.get('role_name') != 'Admin':
         return "Unauthorized", 403
     
@@ -386,7 +363,7 @@ def login():
 
 @app.route('/logout')
 def logout():
-    session.clear() # Securely clear entire session payload
+    session.clear() 
     flash("You have been logged out.", "success")
     return redirect(url_for('login'))
 
@@ -410,10 +387,8 @@ def profile():
             return redirect(url_for('profile'))
             
         try:
-            # Verify Current Password from MongoDB
             auth_doc = mongo.db.credentials.find_one({'staff_id': staff_id})
             if auth_doc and check_password_hash(auth_doc['password_hash'], current_password):
-                # Hash and Update in MongoDB
                 hashed_pw = generate_password_hash(new_password)
                 mongo.db.credentials.update_one(
                     {'staff_id': staff_id},
@@ -537,7 +512,6 @@ def add_animal():
         breed_name = request.form.get('breed_name')
         
         try:
-            # 1. Resolve Species
             species_q = text("SELECT Species_ID FROM SPECIES WHERE Species_Name = :sn")
             species_res = db.session.execute(species_q, {'sn': species_name}).fetchone()
             
@@ -547,7 +521,6 @@ def add_animal():
                 db.session.execute(text("INSERT INTO SPECIES (Species_Name) VALUES (:sn)"), {'sn': species_name})
                 species_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
             
-            # 2. Resolve Breed (linked to species)
             breed_q = text("SELECT Breed_ID FROM BREED WHERE Breed_Name = :bn AND Species_ID = :sid")
             breed_res = db.session.execute(breed_q, {'bn': breed_name, 'sid': species_id}).fetchone()
             
@@ -1049,7 +1022,6 @@ def delete_phone(id, phone):
 
 @app.route('/admin/logs')
 def admin_logs():
-    # Placeholder for potential future non-audit log features
     return "This section is under maintenance.", 501
 
 
