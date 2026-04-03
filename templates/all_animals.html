@@ -50,17 +50,12 @@
 
         <div class="grid grid-cols-2 gap-4 py-5 border-t border-gray-50 border-dashed">
             <div>
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Biological Identity</p>
-                <div class="flex items-center gap-1.5 text-xs font-bold text-gray-700">
-                    <span class="material-symbols-outlined text-[14px] text-gray-400">intersex</span>
-                    {{ animal.gender or 'Unknown' }}
-                </div>
+                <p class="text-sm text-gray-600">Gender: {{ animal.gender or 'Unknown' }}</p>
             </div>
             <div>
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Registry ID</p>
-                <div class="flex items-center gap-1.5 text-xs font-bold text-gray-700">
-                    <span class="material-symbols-outlined text-[14px] text-gray-400">fingerprint</span>
-                    ANM-{{ animal.animal_id }}
+                <div class="flex items-center gap-1.5 text-xs font-bold text-gray-500">
+                    <span class="material-symbols-outlined text-[14px] opacity-20">fingerprint</span>
+                    ID: {{ animal.animal_id }}
                 </div>
             </div>
         </div>
@@ -70,12 +65,6 @@
                 <span class="material-symbols-outlined text-[18px]">open_in_new</span>
                 Access Full Profile
             </a>
-            
-            {% if animal.adoption_status == 'Available' %}
-            <div class="text-[9px] text-center text-emerald-600 font-bold uppercase tracking-widest animate-pulse">
-                • Ready for Placement •
-            </div>
-            {% endif %}
         </div>
     </div>
     {% else %}

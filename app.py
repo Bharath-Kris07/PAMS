@@ -160,7 +160,12 @@ SELECT s.Species_Name, COUNT(a.Animal_ID) as Available_Count
 FROM SPECIES s
 JOIN BREED b ON s.Species_ID = b.Species_ID
 JOIN ANIMAL a ON b.Breed_ID = a.Breed_ID
-WHERE a.Adoption_Status = 'Available'
+WHERE a.Animal_ID NOT IN (
+    SELECT ad.Animal_ID 
+    FROM ADOPTION ad 
+    LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
+    WHERE ar.Return_Date IS NULL
+)
 GROUP BY s.Species_Name
 ORDER BY Available_Count DESC
 """
@@ -184,11 +189,16 @@ def dashboard():
         
     try:
         query = text("""
-            SELECT a.*, b.Breed_Name, s.Species_Name 
+            SELECT a.*, b.Breed_Name, s.Species_Name, 'Available' as adoption_status
             FROM ANIMAL a
             LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID
             LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
-            WHERE a.Adoption_Status = 'Available'
+            WHERE a.Animal_ID NOT IN (
+                SELECT ad.Animal_ID 
+                FROM ADOPTION ad 
+                LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
+                WHERE ar.Return_Date IS NULL
+            )
         """)
         available_animals = db.session.execute(query).fetchall()
     except Exception as e:
@@ -202,11 +212,18 @@ def admin_dashboard():
         
     search_term = request.args.get('q')
     query_str = """
-        SELECT a.Animal_ID, a.Name, a.Gender, a.Adoption_Status, s.Species_Name AS Species 
+        SELECT a.Animal_ID, a.Name, a.Gender, 
+               'Available' AS Adoption_Status, 
+               s.Species_Name AS Species 
         FROM ANIMAL a 
         LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID 
         LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
-        WHERE a.Adoption_Status = 'Available'
+        WHERE a.Animal_ID NOT IN (
+            SELECT ad.Animal_ID 
+            FROM ADOPTION ad 
+            LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
+            WHERE ar.Return_Date IS NULL
+        )
     """
     params = {}
     if search_term:
@@ -229,16 +246,45 @@ def admin_dashboard():
         
     return render_template('admin_dashboard.html', pets=pets, staff_members=staff_members)
 
-
+@app.route('/staff/dashboard')
+def staff_dashboard():
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    if session.get('role_name') != 'Staff': return "Unauthorized", 403
+    
+    query = text("""
+        SELECT a.Animal_ID, a.Name, a.Gender, 
+               'Available' AS Adoption_Status, 
+               s.Species_Name AS Species 
+        FROM ANIMAL a 
+        LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID 
+        LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
+        WHERE a.Animal_ID NOT IN (
+            SELECT ad.Animal_ID 
+            FROM ADOPTION ad 
+            LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
+            WHERE ar.Return_Date IS NULL
+        )
+    """)
+    pets_result = db.session.execute(query)
+    pets = [dict(zip([k.lower() for k in pets_result.keys()], row)) for row in pets_result.fetchall()]
     return render_template('staff_dashboard.html', pets=pets)
 
 @app.route('/animals/all')
 def all_animals():
     if 'staff_id' not in session: return redirect(url_for('login'))
 
-    # Strict Raw SQL Query
+    # Strict Raw SQL Query with Derived Status
     query = text("""
-        SELECT a.*, b.Breed_Name, s.Species_Name 
+        SELECT a.*, b.Breed_Name, s.Species_Name,
+               CASE 
+                   WHEN a.Animal_ID IN (
+                       SELECT ad.Animal_ID 
+                       FROM ADOPTION ad 
+                       LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
+                       WHERE ar.Return_Date IS NULL
+                   ) THEN 'Adopted' 
+                   ELSE 'Available' 
+               END AS Adoption_Status
         FROM ANIMAL a 
         LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID 
         LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
@@ -484,11 +530,11 @@ def add_animal():
                                    {'bn': breed_name, 'sid': species_id})
                 breed_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
 
-            # 3. Insert Animal
+            # 3. Insert Animal (Status is derived, so we omit Adoption_Status column)
             dob = datetime.strptime(dob_str, '%Y-%m-%d').date() if dob_str else None
             insert_animal_q = text("""
-                INSERT INTO ANIMAL (Name, Gender, DateOfBirth, Adoption_Status, Breed_ID)
-                VALUES (:name, :gender, :dob, 'Available', :bid)
+                INSERT INTO ANIMAL (Name, Gender, DateOfBirth, Breed_ID)
+                VALUES (:name, :gender, :dob, :bid)
             """)
             db.session.execute(insert_animal_q, {
                 'name': name,
@@ -600,7 +646,16 @@ def animal_profile(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
     
     animal_res = db.session.execute(text("""
-        SELECT a.*, b.Breed_Name, s.Species_Name
+        SELECT a.*, b.Breed_Name, s.Species_Name,
+               CASE 
+                   WHEN a.Animal_ID IN (
+                       SELECT ad.Animal_ID 
+                       FROM ADOPTION ad 
+                       LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
+                       WHERE ar.Return_Date IS NULL
+                   ) THEN 'Adopted' 
+                   ELSE 'Available' 
+               END AS Adoption_Status
         FROM ANIMAL a
         LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID
         LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
@@ -641,39 +696,35 @@ def animal_profile(id):
     return render_template('animal_profile.html', animal=animal, medical_records=medical_records, adoptions=adoptions, adopters=adopters)
 
 @app.route('/animal/<int:id>/adopt', methods=['POST'])
-def adopt_animal_direct(id):
+def adopt_animal(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
-    if session.get('role_name') not in ['Admin', 'Staff']: return "Unauthorized", 403
     
     adopter_id = request.form.get('adopter_id')
-    fee = request.form.get('fee')
+    fee = request.form.get('fee', 0)
     staff_id = session.get('staff_id')
     
-    if not adopter_id or not fee:
-        flash("Please provide all required adoption details.", "error")
-        return redirect(url_for('animal_profile', id=id))
-        
     try:
-        # Create adoption record (direct assignment)
+        # 1. Create Adoption Record (This implicitly changes the derived status to adopted)
         db.session.execute(text("""
             INSERT INTO ADOPTION (Animal_ID, Adopter_ID, Staff_ID, Adoption_Date, Fee) 
-            VALUES (:a_id, :ad_id, :s_id, :date, :fee)
-        """), {
-            'a_id': id,
-            'ad_id': int(adopter_id),
-            's_id': staff_id,
-            'date': datetime.now().date(),
-            'fee': float(fee)
-        })
+            VALUES (:an_id, :ad_id, :st_id, CURRENT_DATE, :fee)
+        """), {'an_id': id, 'ad_id': adopter_id, 'st_id': staff_id, 'fee': fee})
         
-        # Update animal status to 'Adopted'
-        db.session.execute(text("UPDATE ANIMAL SET Adoption_Status = 'Adopted' WHERE Animal_ID = :id"), {'id': id})
+        # 2. Fetch the new Adoption_ID
+        adopt_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
         
+        # 3. Force Payment Log if fee > 0
+        if float(fee) > 0:
+            db.session.execute(text("""
+                INSERT INTO PAYMENT (Adoption_ID, Payment_Date, Amount) 
+                VALUES (:ad_id, CURRENT_DATE, :amount)
+            """), {'ad_id': adopt_id, 'amount': fee})
+            
         db.session.commit()
-        flash("Adoption process complete! Pet successfully adopted.", "success")
+        flash("Adoption and payment logged successfully!", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f"Error processing adoption: {str(e)}", "error")
+        flash(f"Database error: {str(e)}", "error")
         
     return redirect(url_for('animal_profile', id=id))
 
