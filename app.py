@@ -770,10 +770,8 @@ def adopter_profile(id):
         flash("Adopter not found.", "error")
         return redirect(url_for('dashboard'))
         
-    # Fetch all phone numbers
     phones = db.session.execute(text("SELECT Phone_Number FROM ADOPTER_PHONE WHERE Adopter_ID = :id"), {'id': id}).fetchall()
     
-    # Fix Adoption History: Join AdoptionReturn to check for returns
     adoptions = db.session.execute(text("""
         SELECT a.Adoption_ID, a.Adoption_Date, an.Animal_ID, an.Name AS Animal_Name, a.Fee, r.Return_Date 
         FROM ADOPTION a 
@@ -783,7 +781,6 @@ def adopter_profile(id):
         ORDER BY a.Adoption_Date DESC
     """), {'id': id}).fetchall()
     
-    # Fix Total Contributions: Sum actual payment ledger (includes refunds)
     total_contributions = db.session.execute(text("""
         SELECT COALESCE(SUM(p.Amount), 0) 
         FROM PAYMENT p 
@@ -791,7 +788,6 @@ def adopter_profile(id):
         WHERE a.Adopter_ID = :id
     """), {'id': id}).scalar()
     
-    # Fetch active adoptions for return dropdown
     active_adoptions = db.session.execute(text("""
         SELECT ad.Adoption_ID, an.Name AS Pet_Name, ad.Fee 
         FROM ADOPTION ad 
@@ -975,23 +971,24 @@ def edit_adopter(id):
     return render_template('edit_adopter.html', adopter=adopter)
 
 @app.route('/admin/adopter/<int:id>/add_phone', methods=['POST'])
-def add_phone(id):
+def add_adopter_phone(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
-    if session.get('role_name') != 'Admin': return "Unauthorized", 403
     
-    phone = request.form.get('phone_number')
-    if not phone:
-        flash("Phone number is required.", "error")
+    new_phone = request.form.get('phone_number')
+    if not new_phone:
+        flash("Phone number cannot be empty.", "error")
         return redirect(url_for('adopter_profile', id=id))
         
     try:
-        db.session.execute(text("INSERT INTO ADOPTER_PHONE (Adopter_ID, Phone_Number) VALUES (:id, :phone)"), 
-                         {'id': id, 'phone': phone})
+        db.session.execute(text("""
+            INSERT INTO ADOPTER_PHONE (Adopter_ID, Phone_Number) 
+            VALUES (:id, :phone)
+        """), {'id': id, 'phone': new_phone.strip()})
         db.session.commit()
-        flash("Contact method added!", "success")
+        flash("Contact method added successfully!", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f"Error adding phone: {e}", "error")
+        flash("Error: Could not add number. It might already exist.", "error")
         
     return redirect(url_for('adopter_profile', id=id))
 

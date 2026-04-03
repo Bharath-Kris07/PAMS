@@ -224,7 +224,7 @@
                         </div>
                         <div>
                             <p class="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest leading-none mb-1">Mobile</p>
-                            <p class="text-sm font-bold text-on-surface">{{ phone.Phone_Number | in_mobile }}</p>
+                            <p class="text-sm font-bold text-on-surface">{{ phone.Phone_Number }}</p>
                         </div>
                     </div>
                     {% if session.get('role_name') == 'Admin' %}
@@ -237,24 +237,22 @@
                 </div>
                 {% else %}
                 <div class="text-center py-6">
-                    <p class="text-xs text-on-surface-variant font-medium">No contact methods found.</p>
+                    <p class="text-xs text-on-surface-variant font-medium">No contact numbers provided</p>
                 </div>
                 {% endfor %}
             </div>
             
             {% if session.get('role_name') == 'Admin' %}
             <div class="mt-6 pt-6 border-t border-surface-container-low">
-                <form action="{{ url_for('add_phone', id=adopter.Adopter_ID) }}" method="POST" class="space-y-3">
-                    <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest px-1">Add Contact Method</label>
-                    <div class="flex gap-2">
-                        <input type="text" name="phone_number" placeholder="+91 XXXXX XXXXX" required
-                               class="flex-1 bg-surface-container-low border-transparent focus:border-primary focus:ring-0 rounded-xl text-xs font-bold px-4 py-2.5 transition-all outline-none">
-                        <button type="submit" class="bg-primary text-on-primary p-2.5 rounded-xl hover:bg-primary-dim transition-all shadow-sm active:scale-95">
-                            <span class="material-symbols-outlined text-[20px]">add</span>
-                        </button>
-                    </div>
-                    <p class="text-[9px] text-on-surface-variant/70 italic px-1">Numbers must follow the Indian formatting (+91 ...)</p>
+                <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest px-1">Add Contact Method</label>
+                <form action="{{ url_for('add_adopter_phone', id=adopter.Adopter_ID) }}" method="POST" class="flex gap-2">
+                    <input type="text" name="phone_number" placeholder="+91 XXXXX XXXXX" required
+                           class="flex-1 bg-surface-container-low border-transparent focus:border-primary focus:ring-0 rounded-xl text-xs font-bold px-4 py-2.5 transition-all outline-none">
+                    <button type="submit" class="bg-primary text-on-primary p-2.5 rounded-xl hover:bg-primary-dim transition-all shadow-sm active:scale-95">
+                        <span class="material-symbols-outlined text-[20px]">add</span>
+                    </button>
                 </form>
+                <p class="text-[9px] text-on-surface-variant/70 italic px-1 mt-2">Numbers must follow the Indian formatting (+91 ...)</p>
             </div>
             {% endif %}
         </div>
