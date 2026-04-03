@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Complete Animal Directory - Haven Flow{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-10">
+    <div>
+        <h1 class="text-4xl font-extrabold text-[#41608c] tracking-tight font-headline">Complete Animal Directory</h1>
+        <p class="text-sm text-gray-500 mt-2 uppercase tracking-widest font-bold">Comprehensive Pet Records • Historical Transparency</p>
+    </div>
+    <div class="hidden md:flex items-center gap-3">
+        <button onclick="window.print()" class="p-3 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all shadow-sm">
+            <span class="material-symbols-outlined text-[20px]">print</span>
+        </button>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    {% for animal in animals %}
+    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-all group relative overflow-hidden">
+        <!-- Status Ribbon for 'Available' -->
+        {% if animal.adoption_status == 'Available' %}
+        <div class="absolute -right-4 -top-4 w-12 h-12 bg-green-50 rounded-full blur-xl opacity-50"></div>
+        {% endif %}
+
+        <div class="flex items-start gap-5 mb-6">
+            <div class="w-16 h-16 rounded-2xl bg-gray-50 overflow-hidden border border-gray-100 flex-shrink-0 shadow-inner">
+                <img src="{{ url_for('serve_image', entity_type='animal', entity_id=animal.animal_id) }}" alt="{{ animal.name }}" class="w-full h-full object-cover">
+            </div>
+            <div class="flex-1 overflow-hidden">
+                <div class="flex items-center justify-between gap-2 mb-1">
+                    <h3 class="font-bold text-gray-900 group-hover:text-blue-700 transition-colors truncate">{{ animal.name }}</h3>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter border
+                        {% if animal.adoption_status == 'Available' %}
+                            bg-green-50 text-green-700 border-green-100
+                        {% elif animal.adoption_status == 'Adopted' %}
+                            bg-blue-50 text-blue-700 border-blue-100
+                        {% else %}
+                            bg-gray-50 text-gray-500 border-gray-200
+                        {% endif %}">
+                        {{ animal.adoption_status }}
+                    </span>
+                </div>
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                   <span class="material-symbols-outlined text-[12px]">category</span> 
+                   {{ animal.species_name }} • {{ animal.breed_name if animal.breed_name else 'Mixed' }}
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 py-5 border-t border-gray-50 border-dashed">
+            <div>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Biological Identity</p>
+                <div class="flex items-center gap-1.5 text-xs font-bold text-gray-700">
+                    <span class="material-symbols-outlined text-[14px] text-gray-400">intersex</span>
+                    {{ animal.gender or 'Unknown' }}
+                </div>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Registry ID</p>
+                <div class="flex items-center gap-1.5 text-xs font-bold text-gray-700">
+                    <span class="material-symbols-outlined text-[14px] text-gray-400">fingerprint</span>
+                    ANM-{{ animal.animal_id }}
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 gap-3">
+            <a href="{{ url_for('animal_profile', id=animal.animal_id) }}" class="w-full py-3.5 bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-[#41608c] hover:text-white hover:border-transparent transition-all shadow-sm active:scale-95">
+                <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+                Access Full Profile
+            </a>
+            
+            {% if animal.adoption_status == 'Available' %}
+            <div class="text-[9px] text-center text-emerald-600 font-bold uppercase tracking-widest animate-pulse">
+                • Ready for Placement •
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="col-span-full py-32 text-center bg-white rounded-[40px] border-2 border-dashed border-gray-100 shadow-inner">
+        <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span class="material-symbols-outlined text-5xl text-gray-200">database_off</span>
+        </div>
+        <h3 class="text-xl font-bold text-gray-400 font-headline">The directory is currently empty</h3>
+        <p class="text-sm text-gray-400 mt-2">No historical or active records were found in the database.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

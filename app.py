@@ -230,34 +230,26 @@ def admin_dashboard():
     return render_template('admin_dashboard.html', pets=pets, staff_members=staff_members)
 
 
-@app.route('/staff/dashboard')
-def staff_dashboard():
-    if 'staff_id' not in session: return redirect(url_for('login'))
-    if session.get('role_name') != 'Staff': return "Unauthorized", 403
-        
-    search_term = request.args.get('q')
-    
-    query_str = """
-        SELECT a.Animal_ID, a.Name, a.Gender, a.Adoption_Status, s.Species_Name, b.Breed_Name 
-        FROM ANIMAL a
-        LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID
-        LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
-        WHERE a.Adoption_Status = 'Available'
-    """
-    params = {}
-    if search_term:
-        query_str += " AND (a.Name LIKE :term OR b.Breed_Name LIKE :term OR s.Species_Name LIKE :term"
-        params['term'] = f"%{search_term}%"
-        if search_term.isdigit():
-            query_str += " OR a.Animal_ID = :exact_id OR b.Breed_ID = :exact_id OR s.Species_ID = :exact_id"
-            params['exact_id'] = int(search_term)
-        query_str += ")"
-    query_str += " LIMIT 50"
-
-    pets_result = db.session.execute(text(query_str), params)
-    pets = [dict(zip([k.lower() for k in pets_result.keys()], row)) for row in pets_result.fetchall()]
-
     return render_template('staff_dashboard.html', pets=pets)
+
+@app.route('/animals/all')
+def all_animals():
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    
+    try:
+        query = text("""
+            SELECT a.*, b.Breed_Name, s.Species_Name 
+            FROM ANIMAL a 
+            LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID 
+            LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
+        """)
+        result = db.session.execute(query).fetchall()
+        animals = [dict(zip([k.lower() for k in result.keys()], row)) for row in result]
+    except Exception as e:
+        flash(f"Error fetching animal records: {str(e)}", "error")
+        animals = []
+        
+    return render_template('all_animals.html', animals=animals)
 @app.route('/animal/delete/<int:id>', methods=['POST'])
 def delete_animal(id):
     # Action route security check - Placed directly at the top
@@ -371,7 +363,7 @@ def profile():
 @app.route('/medical/dashboard')
 def medical_dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
-    thresh_date = datetime.now().date() - timedelta(days=180)
+    
     query = text("""
         SELECT a.*, m.Treatment as last_treatment_name, m.Treatment_Date as last_treatment_date
         FROM ANIMAL a
@@ -381,11 +373,11 @@ def medical_dashboard():
             GROUP BY Animal_ID
         ) last_date ON a.Animal_ID = last_date.Animal_ID
         LEFT JOIN MEDICAL_RECORD m ON a.Animal_ID = m.Animal_ID AND m.Treatment_Date = last_date.max_date
-        WHERE last_date.max_date IS NULL OR last_date.max_date < :thresh_date
+        ORDER BY last_date.max_date DESC
     """)
-    medical_result = db.session.execute(query, {'thresh_date': thresh_date})
-    animals_needing_followup = [dict(zip([k.lower() for k in medical_result.keys()], row)) for row in medical_result.fetchall()]
-    return render_template('medical_dashboard.html', animals=animals_needing_followup)
+    medical_result = db.session.execute(query)
+    all_medical_animals = [dict(zip([k.lower() for k in medical_result.keys()], row)) for row in medical_result.fetchall()]
+    return render_template('medical_dashboard.html', animals=all_medical_animals)
 
 @app.route('/medical/add', methods=['GET', 'POST'])
 def add_medical_record():

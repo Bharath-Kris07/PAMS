@@ -40,15 +40,12 @@
 {% if session.get('staff_id') %}
 <!-- SideNavBar -->
 <aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-gray-100 py-8 z-40 border-r border-gray-200">
-    <div class="mb-2 px-6 pt-4 pb-2 border-t border-gray-200 border-opacity-50">
-        <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Animal Directory</p>
-    </div>
-    <div class="flex-1 space-y-2 pl-4">
+    <div class="flex-1 space-y-2 pl-4 pt-4">
         <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm border-blue-600 border-r-4' if request.endpoint in ['dashboard', 'admin_dashboard', 'staff_dashboard'] else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('dashboard') }}">
             <span class="material-symbols-outlined group-hover:scale-110 transition-transform">pets</span>
             <span>Available for Adoption</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm border-blue-600 border-r-4' if request.endpoint == 'financial_dashboard' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('financial_dashboard') }}">
+        <a class="flex items-center gap-3 px-4 py-3 {{ 'bg-white text-blue-800 rounded-l-xl shadow-sm border-blue-600 border-r-4' if request.endpoint == 'all_animals' else 'text-gray-600 hover:text-blue-800' }} font-semibold transition-all group" href="{{ url_for('all_animals') }}">
             <span class="material-symbols-outlined">inventory_2</span>
             <span>All Animal Records</span>
         </a>
