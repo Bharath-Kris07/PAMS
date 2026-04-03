@@ -166,7 +166,7 @@ def dashboard():
         return redirect(url_for('staff_dashboard'))
         
     try:
-        query = text("SELECT * FROM view_all_animals WHERE Adoption_Status = 'Available'")
+        query = text("SELECT * FROM UniversalAnimalInventoryView WHERE Adoption_Status = 'Available'")
         available_animals = db.session.execute(query).fetchall()
     except Exception as e:
         available_animals = []
@@ -182,7 +182,7 @@ def admin_dashboard():
     
     query_str = """
         SELECT Animal_ID, Name, Gender, Adoption_Status, Species_Name AS Species 
-        FROM view_staff_pets
+        FROM AvailableAnimalsView
     """
     
     params = {}
@@ -241,7 +241,7 @@ def staff_dashboard():
     
     query = text("""
         SELECT Animal_ID, Name, Gender, Adoption_Status, Species_Name AS Species 
-        FROM view_all_animals 
+        FROM UniversalAnimalInventoryView 
         WHERE Adoption_Status = 'Available'
     """)
     
@@ -254,7 +254,7 @@ def staff_dashboard():
 def all_animals():
     if 'staff_id' not in session: return redirect(url_for('login'))
 
-    query = text("SELECT * FROM view_all_animals")
+    query = text("SELECT * FROM UniversalAnimalInventoryView")
 
     result = db.session.execute(query)
     columns = result.keys()
@@ -625,7 +625,7 @@ def view_adopters():
 def animal_profile(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
     
-    animal_res = db.session.execute(text("SELECT * FROM view_all_animals WHERE Animal_ID = :id"), {'id': id})
+    animal_res = db.session.execute(text("SELECT * FROM UniversalAnimalInventoryView WHERE Animal_ID = :id"), {'id': id})
     animal_list = [dict(zip([k.lower() for k in animal_res.keys()], row)) for row in animal_res.fetchall()]
     animal = animal_list[0] if animal_list else None
     
@@ -704,7 +704,7 @@ def adopter_profile(id):
     
     adoptions = db.session.execute(text("""
         SELECT Adoption_ID, Adoption_Date, Animal_ID, Pet_Name AS Animal_Name, Fee, Return_Date 
-        FROM view_admin_adoptions 
+        FROM AdoptionHistoryView 
         WHERE Adopter_ID = :id 
         ORDER BY Adoption_Date DESC
     """), {'id': id}).fetchall()
