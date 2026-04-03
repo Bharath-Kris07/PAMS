@@ -166,18 +166,7 @@ def dashboard():
         return redirect(url_for('staff_dashboard'))
         
     try:
-        query = text("""
-            SELECT a.*, b.Breed_Name, s.Species_Name, 'Available' as adoption_status
-            FROM ANIMAL a
-            LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID
-            LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
-            WHERE a.Animal_ID NOT IN (
-                SELECT ad.Animal_ID 
-                FROM ADOPTION ad 
-                LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
-                WHERE ar.Return_Date IS NULL
-            )
-        """)
+        query = text("SELECT * FROM view_all_animals WHERE Adoption_Status = 'Available'")
         available_animals = db.session.execute(query).fetchall()
     except Exception as e:
         available_animals = []
@@ -252,7 +241,8 @@ def staff_dashboard():
     
     query = text("""
         SELECT Animal_ID, Name, Gender, Adoption_Status, Species_Name AS Species 
-        FROM view_staff_pets
+        FROM view_all_animals 
+        WHERE Adoption_Status = 'Available'
     """)
     
     pets_result = db.session.execute(query)
@@ -635,22 +625,7 @@ def view_adopters():
 def animal_profile(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
     
-    animal_res = db.session.execute(text("""
-        SELECT a.*, b.Breed_Name, s.Species_Name,
-               CASE 
-                   WHEN a.Animal_ID IN (
-                       SELECT ad.Animal_ID 
-                       FROM ADOPTION ad 
-                       LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
-                       WHERE ar.Return_Date IS NULL
-                   ) THEN 'Adopted' 
-                   ELSE 'Available' 
-               END AS Adoption_Status
-        FROM ANIMAL a
-        LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID
-        LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
-        WHERE a.Animal_ID = :id
-    """), {'id': id})
+    animal_res = db.session.execute(text("SELECT * FROM view_all_animals WHERE Animal_ID = :id"), {'id': id})
     animal_list = [dict(zip([k.lower() for k in animal_res.keys()], row)) for row in animal_res.fetchall()]
     animal = animal_list[0] if animal_list else None
     
