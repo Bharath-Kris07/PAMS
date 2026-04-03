@@ -89,7 +89,7 @@
                 </div>
             </div>
 
-            <form action="{{ url_for('adopt_animal_direct', id=animal.animal_id) }}" method="POST" class="space-y-6">
+            <form action="{{ url_for('adopt_animal', id=animal.animal_id) }}" method="POST" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
                         <label class="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Select Adopter *</label>

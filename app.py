@@ -700,21 +700,27 @@ def adopt_animal(id):
     if 'staff_id' not in session: return redirect(url_for('login'))
     
     adopter_id = request.form.get('adopter_id')
-    fee = request.form.get('fee', 0)
+    raw_fee = request.form.get('fee', '0')
     staff_id = session.get('staff_id')
     
+    # Safe float conversion to prevent silent transaction rollbacks
     try:
-        # 1. Create Adoption Record (This implicitly changes the derived status to adopted)
+        fee = float(raw_fee) if raw_fee and raw_fee.strip() != '' else 0.0
+    except ValueError:
+        fee = 0.0
+    
+    try:
+        # 1. Insert Adoption Record
         db.session.execute(text("""
             INSERT INTO ADOPTION (Animal_ID, Adopter_ID, Staff_ID, Adoption_Date, Fee) 
             VALUES (:an_id, :ad_id, :st_id, CURRENT_DATE, :fee)
         """), {'an_id': id, 'ad_id': adopter_id, 'st_id': staff_id, 'fee': fee})
         
-        # 2. Fetch the new Adoption_ID
+        # 2. Retrieve the new Adoption_ID
         adopt_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
         
-        # 3. Force Payment Log if fee > 0
-        if float(fee) > 0:
+        # 3. Explicitly Log Payment if a fee was collected
+        if fee > 0:
             db.session.execute(text("""
                 INSERT INTO PAYMENT (Adoption_ID, Payment_Date, Amount) 
                 VALUES (:ad_id, CURRENT_DATE, :amount)
@@ -725,6 +731,7 @@ def adopt_animal(id):
     except Exception as e:
         db.session.rollback()
         flash(f"Database error: {str(e)}", "error")
+        print(f"Adoption failed: {str(e)}") # Prints to terminal for debugging
         
     return redirect(url_for('animal_profile', id=id))
 
@@ -749,7 +756,38 @@ def adopter_profile(id):
     
     total_fees = sum([float(a.Fee or 0) for a in adoptions])
     
-    return render_template('adopter_profile.html', adopter=adopter, phones=phones, adoptions=adoptions, total_fees=total_fees)
+    # Fetch active adoptions for return dropdown
+    active_adoptions = db.session.execute(text("""
+        SELECT ad.Adoption_ID, an.Name AS Pet_Name, ad.Fee 
+        FROM ADOPTION ad 
+        JOIN ANIMAL an ON ad.Animal_ID = an.Animal_ID 
+        WHERE ad.Adopter_ID = :id 
+        AND ad.Adoption_ID NOT IN (SELECT Adoption_ID FROM AdoptionReturn)
+    """), {'id': id}).fetchall()
+    
+    return render_template('adopter_profile.html', adopter=adopter, phones=phones, adoptions=adoptions, total_fees=total_fees, active_adoptions=active_adoptions)
+
+@app.route('/admin/adopter/<int:id>/return_adoption', methods=['POST'])
+def return_adoption_from_profile(id):
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    if session.get('role_name') != 'Admin': return "Unauthorized", 403
+    
+    adoption_id = request.form.get('adoption_id')
+    return_reason = request.form.get('return_reason')
+    
+    try:
+        # Note: Refund is handled by a database trigger, so we only insert the return record.
+        db.session.execute(text("""
+            INSERT INTO AdoptionReturn (Adoption_ID, Return_Date, Return_Reason) 
+            VALUES (:ad_id, CURRENT_DATE, :reason)
+        """), {'ad_id': adoption_id, 'reason': return_reason})
+        db.session.commit()
+        flash("Adoption return processed successfully! Refund issued via trigger.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error processing return: {e}", "error")
+        
+    return redirect(url_for('adopter_profile', id=id))
 
 @app.route('/animal/<int:id>/medical', methods=['GET', 'POST'])
 def view_medical_records(id):
@@ -921,6 +959,40 @@ def add_phone(id):
         flash(f"Error adding phone: {e}", "error")
         
     return redirect(url_for('adopter_profile', id=id))
+
+@app.route('/admin/adopter/<int:id>/remove_photo', methods=['POST'])
+def remove_adopter_photo(id):
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    if session.get('role_name') != 'Admin': return "Unauthorized", 403
+    
+    try:
+        # Adopter photos are stored in MongoDB, not as a SQL column
+        mongo.db.photos.delete_one({'MySQL_ID': id, 'type': 'adopter'})
+        flash("Adopter photo removed.", "success")
+    except Exception as e:
+        flash(f"Error removing photo: {e}", "error")
+    return redirect(url_for('adopter_profile', id=id))
+
+@app.route('/admin/adopter/<int:id>/delete', methods=['POST'])
+def delete_adopter(id):
+    if 'staff_id' not in session: return redirect(url_for('login'))
+    if session.get('role_name') != 'Admin': return "Unauthorized", 403
+    
+    try:
+        # Cascade Delete: Payments -> Returns -> Adoptions -> Adopter
+        db.session.execute(text("DELETE FROM PAYMENT WHERE Adoption_ID IN (SELECT Adoption_ID FROM ADOPTION WHERE Adopter_ID = :id)"), {'id': id})
+        db.session.execute(text("DELETE FROM AdoptionReturn WHERE Adoption_ID IN (SELECT Adoption_ID FROM ADOPTION WHERE Adopter_ID = :id)"), {'id': id})
+        db.session.execute(text("DELETE FROM ADOPTION WHERE Adopter_ID = :id"), {'id': id})
+        db.session.execute(text("DELETE FROM ADOPTER_PHONE WHERE Adopter_ID = :id"), {'id': id})
+        db.session.execute(text("DELETE FROM ADOPTER WHERE Adopter_ID = :id"), {'id': id})
+        
+        db.session.commit()
+        flash("Adopter and all associated records deleted successfully. Pets reverted to Available.", "success")
+        return redirect(url_for('view_adopters'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Constraint Error: {e}", "error")
+        return redirect(url_for('adopter_profile', id=id))
 
 @app.route('/admin/adopter/<int:id>/delete_phone/<path:phone>', methods=['POST'])
 def delete_phone(id, phone):
