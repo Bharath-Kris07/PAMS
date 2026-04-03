@@ -251,21 +251,14 @@ def staff_dashboard():
     if session.get('role_name') != 'Staff': return "Unauthorized", 403
     
     query = text("""
-        SELECT a.Animal_ID, a.Name, a.Gender, 
-               'Available' AS Adoption_Status, 
-               s.Species_Name AS Species 
-        FROM ANIMAL a 
-        LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID 
-        LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
-        WHERE a.Animal_ID NOT IN (
-            SELECT ad.Animal_ID 
-            FROM ADOPTION ad 
-            LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
-            WHERE ar.Return_Date IS NULL
-        )
+        SELECT Animal_ID, Name, Gender, Adoption_Status, Species_Name AS Species 
+        FROM view_staff_pets
     """)
+    
     pets_result = db.session.execute(query)
+    
     pets = [dict(zip([k.lower() for k in pets_result.keys()], row)) for row in pets_result.fetchall()]
+    
     return render_template('staff_dashboard.html', pets=pets)
 @app.route('/animals/all')
 def all_animals():
