@@ -747,14 +747,23 @@ def adopter_profile(id):
     # Fetch all phone numbers
     phones = db.session.execute(text("SELECT Phone_Number FROM ADOPTER_PHONE WHERE Adopter_ID = :id"), {'id': id}).fetchall()
     
+    # Fix Adoption History: Join AdoptionReturn to check for returns
     adoptions = db.session.execute(text("""
-        SELECT ad.*, a.Name as Animal_Name 
-        FROM ADOPTION ad
-        JOIN ANIMAL a ON ad.Animal_ID = a.Animal_ID
-        WHERE ad.Adopter_ID = :id
+        SELECT a.Adoption_ID, a.Adoption_Date, an.Animal_ID, an.Name AS Animal_Name, a.Fee, r.Return_Date 
+        FROM ADOPTION a 
+        JOIN ANIMAL an ON a.Animal_ID = an.Animal_ID 
+        LEFT JOIN AdoptionReturn r ON a.Adoption_ID = r.Adoption_ID 
+        WHERE a.Adopter_ID = :id 
+        ORDER BY a.Adoption_Date DESC
     """), {'id': id}).fetchall()
     
-    total_fees = sum([float(a.Fee or 0) for a in adoptions])
+    # Fix Total Contributions: Sum actual payment ledger (includes refunds)
+    total_contributions = db.session.execute(text("""
+        SELECT COALESCE(SUM(p.Amount), 0) 
+        FROM PAYMENT p 
+        JOIN ADOPTION a ON p.Adoption_ID = a.Adoption_ID 
+        WHERE a.Adopter_ID = :id
+    """), {'id': id}).scalar()
     
     # Fetch active adoptions for return dropdown
     active_adoptions = db.session.execute(text("""
@@ -765,7 +774,7 @@ def adopter_profile(id):
         AND ad.Adoption_ID NOT IN (SELECT Adoption_ID FROM AdoptionReturn)
     """), {'id': id}).fetchall()
     
-    return render_template('adopter_profile.html', adopter=adopter, phones=phones, adoptions=adoptions, total_fees=total_fees, active_adoptions=active_adoptions)
+    return render_template('adopter_profile.html', adopter=adopter, phones=phones, adoptions=adoptions, total_fees=total_contributions, active_adoptions=active_adoptions)
 
 @app.route('/admin/adopter/<int:id>/return_adoption', methods=['POST'])
 def return_adoption_from_profile(id):

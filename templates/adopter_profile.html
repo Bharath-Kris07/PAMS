@@ -122,9 +122,19 @@
                                         <span class="material-symbols-outlined text-[14px] text-on-secondary-container">pets</span>
                                     </div>
                                     <span class="font-semibold text-on-surface">{{ adoption.Animal_Name }}</span>
+                                    {% if adoption.Return_Date %}
+                                        <span class="bg-red-50 text-red-600 text-[8px] font-black px-1.5 py-0.5 rounded-sm uppercase tracking-tighter border border-red-100">Returned</span>
+                                    {% endif %}
                                 </div>
                             </td>
-                            <td class="px-8 py-5 text-right font-bold text-primary">{{ adoption.Fee | in_rupees }}</td>
+                            <td class="px-8 py-5 text-right font-bold text-primary">
+                                {% if adoption.Return_Date %}
+                                    <s class="opacity-30 font-medium mr-1">{{ adoption.Fee | in_rupees }}</s>
+                                    <span class="text-red-500 text-xs">REFUNDED</span>
+                                {% else %}
+                                    {{ adoption.Fee | in_rupees }}
+                                {% endif %}
+                            </td>
                         </tr>
                         {% else %}
                         <tr>
