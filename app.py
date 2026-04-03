@@ -703,12 +703,10 @@ def adopter_profile(id):
     phones = db.session.execute(text("SELECT Phone_Number FROM ADOPTER_PHONE WHERE Adopter_ID = :id"), {'id': id}).fetchall()
     
     adoptions = db.session.execute(text("""
-        SELECT a.Adoption_ID, a.Adoption_Date, an.Animal_ID, an.Name AS Animal_Name, a.Fee, r.Return_Date 
-        FROM ADOPTION a 
-        JOIN ANIMAL an ON a.Animal_ID = an.Animal_ID 
-        LEFT JOIN AdoptionReturn r ON a.Adoption_ID = r.Adoption_ID 
-        WHERE a.Adopter_ID = :id 
-        ORDER BY a.Adoption_Date DESC
+        SELECT Adoption_ID, Adoption_Date, Animal_ID, Pet_Name AS Animal_Name, Fee, Return_Date 
+        FROM view_admin_adoptions 
+        WHERE Adopter_ID = :id 
+        ORDER BY Adoption_Date DESC
     """), {'id': id}).fetchall()
     
     total_contributions = db.session.execute(text("""
