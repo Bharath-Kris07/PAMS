@@ -864,6 +864,71 @@ def view_medical_records(id):
     
     return render_template('medical_records.html', animal=animal, medical_records=medical_records)
 
+@app.route('/admin/medical/<int:id>/delete', methods=['POST'])
+def delete_medical_record(id):
+    if session.get('role_name') != 'Admin':
+        flash("Unauthorized: Admin access required.", "error")
+        return redirect(url_for('login'))
+        
+    try:
+        # Fetch Animal_ID for redirection before deletion
+        query = text("SELECT Animal_ID FROM MEDICAL_RECORD WHERE Record_ID = :id")
+        record = db.session.execute(query, {'id': id}).fetchone()
+        
+        if not record:
+            flash("Medical record not found.", "error")
+            return redirect(url_for('dashboard'))
+            
+        animal_id = record.Animal_ID
+        
+        db.session.execute(text("DELETE FROM MEDICAL_RECORD WHERE Record_ID = :id"), {'id': id})
+        db.session.commit()
+        flash("Medical record deleted successfully.", "success")
+        return redirect(url_for('view_medical_records', id=animal_id))
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error deleting record: {str(e)}", "error")
+        return redirect(request.referrer or url_for('dashboard'))
+
+@app.route('/admin/medical/<int:id>/edit', methods=['POST'])
+def edit_medical_record(id):
+    if session.get('role_name') != 'Admin':
+        flash("Unauthorized: Admin access required.", "error")
+        return redirect(url_for('login'))
+        
+    treatment = request.form.get('treatment')
+    treatment_date = request.form.get('treatment_date')
+    notes = request.form.get('notes')
+    
+    try:
+        # Fetch Animal_ID for redirection
+        query = text("SELECT Animal_ID FROM MEDICAL_RECORD WHERE Record_ID = :id")
+        record = db.session.execute(query, {'id': id}).fetchone()
+        
+        if not record:
+            flash("Medical record not found.", "error")
+            return redirect(url_for('dashboard'))
+            
+        animal_id = record.Animal_ID
+        
+        db.session.execute(text("""
+            UPDATE MEDICAL_RECORD 
+            SET Treatment = :treatment, Treatment_Date = :date, Notes = :notes 
+            WHERE Record_ID = :id
+        """), {
+            'treatment': treatment,
+            'date': treatment_date,
+            'notes': notes,
+            'id': id
+        })
+        db.session.commit()
+        flash("Medical record updated successfully.", "success")
+        return redirect(url_for('view_medical_records', id=animal_id))
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error updating record: {str(e)}", "error")
+        return redirect(request.referrer or url_for('dashboard'))
+
 @app.route('/api/adopters/search')
 def search_adopters_api():
     if 'staff_id' not in session: return jsonify([]), 401
