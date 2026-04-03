@@ -225,7 +225,7 @@ def update_staff_role(id):
     new_role = request.form.get('role')
     
     try:
-        # Added extra safeguards in the WHERE clause: Staff cannot update themselves or other Admins
+        # extra safeguards in the WHERE clause: Staff cannot update themselves or other Admins
         db.session.execute(text("""
             UPDATE STAFF 
             SET Role_ID = (SELECT Role_ID FROM ROLE WHERE Role_Name = :role) 
