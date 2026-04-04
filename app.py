@@ -588,7 +588,6 @@ def animal_profile(id):
     adopt_res = db.session.execute(text("""
         SELECT ad.Adoption_ID, ad.Adoption_Date, 
                CASE WHEN ar.Return_Date IS NOT NULL THEN 'Returned' 
-                    WHEN ad.Staff_ID IS NULL THEN 'Pending' 
                     ELSE 'Approved' END AS status, 
                a.Adopter_ID, a.F_Name, a.L_Name, ar.Return_Date, ar.Return_Reason 
         FROM ADOPTION ad 
