@@ -116,46 +116,6 @@ def serve_image(entity_type, entity_id):
         pass
         
     return redirect('https://placehold.co/400x400/eeeeee/a0aec0?text=No+Photo')
-
-@app.route('/reports/medical/<int:animal_id>')
-def report_medical(animal_id):
-    query = """
-SELECT m.Treatment, m.Treatment_Date, m.Notes, a.Name as Animal_Name
-FROM MEDICAL_RECORD m
-JOIN ANIMAL a ON m.Animal_ID = a.Animal_ID
-WHERE a.Animal_ID = :animal_id
-ORDER BY m.Treatment_Date DESC
-"""
-    result = db.session.execute(db.text(query), {'animal_id': animal_id}).fetchall()
-    return render_template('reports.html', report_type='medical', data=result, query_text=query.strip(), animal_id=animal_id)
-
-@app.route('/reports/revenue')
-def report_revenue():
-    query = "SELECT SUM(Amount) as Total_Revenue FROM PAYMENT"
-    result = db.session.execute(db.text(query)).fetchone()
-    total_revenue = result.Total_Revenue if result and result.Total_Revenue else 0
-    return render_template('reports.html', report_type='revenue', data={'Total_Revenue': total_revenue}, query_text=query.strip())
-
-@app.route('/reports/species')
-def report_species():
-    query = """
-SELECT s.Species_Name, COUNT(a.Animal_ID) as Available_Count
-FROM SPECIES s
-JOIN BREED b ON s.Species_ID = b.Species_ID
-JOIN ANIMAL a ON b.Breed_ID = a.Breed_ID
-WHERE a.Animal_ID NOT IN (
-    SELECT ad.Animal_ID 
-    FROM ADOPTION ad 
-    LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
-    WHERE ar.Return_Date IS NULL
-)
-GROUP BY s.Species_Name
-ORDER BY Available_Count DESC
-"""
-    result = db.session.execute(db.text(query)).fetchall()
-    return render_template('reports.html', report_type='species', data=result, query_text=query.strip())
-
-
 @app.route('/')
 def dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
