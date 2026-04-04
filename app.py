@@ -456,7 +456,6 @@ def add_animal():
                                    {'bn': breed_name, 'sid': species_id})
                 breed_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
 
-            # Insert Animal (Status is derived, so we omit Adoption_Status column)
             dob = datetime.strptime(dob_str, '%Y-%m-%d').date() if dob_str else None
             insert_animal_q = text("""
                 INSERT INTO ANIMAL (Name, Gender, DateOfBirth, Breed_ID)
