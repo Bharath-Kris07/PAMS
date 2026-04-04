@@ -410,18 +410,6 @@ def revenue_dashboard():
     try:
         total_revenue = db.session.execute(text("SELECT SUM(Amount) as total FROM PAYMENT")).scalar() or 0
         
-        pending_query = text("""
-            SELECT a.Adoption_ID, a.Fee, ad.F_Name, ad.L_Name, an.Name as Animal_Name,
-                   COALESCE(SUM(p.Amount), 0) as paid_amount
-            FROM ADOPTION a
-            JOIN ADOPTER ad ON a.Adopter_ID = ad.Adopter_ID
-            JOIN ANIMAL an ON a.Animal_ID = an.Animal_ID
-            LEFT JOIN PAYMENT p ON a.Adoption_ID = p.Adoption_ID
-            GROUP BY a.Adoption_ID, a.Fee, ad.F_Name, ad.L_Name, an.Name
-            HAVING COALESCE(SUM(p.Amount), 0) < a.Fee
-        """)
-        pending_dues = db.session.execute(pending_query).fetchall()
-        
         recent_payments_query = text("""
             SELECT p.*, ad.F_Name, ad.L_Name 
             FROM PAYMENT p

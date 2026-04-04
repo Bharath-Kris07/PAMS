@@ -11,52 +11,18 @@
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <div class="bg-surface-container-lowest py-10 px-8 rounded-xl shadow-sm text-center flex flex-col justify-center items-center">
+    <div
+        class="bg-surface-container-lowest py-10 px-8 rounded-xl shadow-sm text-center flex flex-col justify-center items-center">
         <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">Total Revenue</span>
-        <h2 class="text-5xl lg:text-6xl font-extrabold font-headline text-primary tracking-tight">{{ total_revenue | in_rupees }}</h2>
-        <div class="mt-4 px-4 py-1.5 bg-secondary-container rounded-full text-[11px] font-bold text-on-secondary-container inline-flex items-center gap-1">
+        <h2 class="text-5xl lg:text-6xl font-extrabold font-headline text-primary tracking-tight">{{ total_revenue |
+            in_rupees }}</h2>
+        <div
+            class="mt-4 px-4 py-1.5 bg-secondary-container rounded-full text-[11px] font-bold text-on-secondary-container inline-flex items-center gap-1">
             <span class="material-symbols-outlined text-[14px]">trending_up</span> All time earnings
         </div>
     </div>
 
     <div class="lg:col-span-2 space-y-8">
-        <!-- Pending Dues Table -->
-        <h3 class="font-headline font-bold text-[#41608c] flex items-center gap-2 text-xl">
-            <span class="material-symbols-outlined text-error">warning</span> Pending Dues
-        </h3>
-        <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="bg-surface-container-high">
-                            <th class="px-6 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Adoption ID</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Adopter</th>
-                            <th class="px-6 py-4 text-right text-xs font-bold text-on-surface-variant uppercase tracking-wider">Total Fee</th>
-                            <th class="px-6 py-4 text-right text-xs font-bold text-on-surface-variant uppercase tracking-wider">Paid</th>
-                            <th class="px-6 py-4 text-right text-xs font-bold text-error uppercase tracking-wider">Due</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y-0">
-                    {% for row in pending_dues %}
-                        <tr class="hover:bg-surface-container-low transition-colors group">
-                            <td class="px-6 py-4 text-sm font-mono text-on-surface-variant">ADP-{{ row.Adoption_ID }}</td>
-                            <td class="px-6 py-4 text-sm font-semibold text-on-surface">{{ row.F_Name }} {{ row.L_Name }}</td>
-                            <td class="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">{{ row.Fee | in_rupees }}</td>
-                            <td class="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">{{ row.paid_amount | in_rupees }}</td>
-                            <td class="px-6 py-4 text-right text-sm font-bold text-error">{{ (row.Fee - row.paid_amount) | in_rupees }}</td>
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <td colspan="5" class="px-6 py-8 text-center text-sm font-medium text-on-surface-variant">
-                                No pending dues. All adoptions are fully paid!
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
         <!-- Recent Payments Table -->
         <h3 class="font-headline font-bold text-[#41608c] flex items-center gap-2 text-xl mt-8 pt-4">
             <span class="material-symbols-outlined">history</span> Recent Payments
@@ -66,27 +32,39 @@
                 <table class="w-full">
                     <thead>
                         <tr class="bg-surface-container-high">
-                            <th class="px-6 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Payment ID</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Date</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">Adopter</th>
-                            <th class="px-6 py-4 text-right text-xs font-bold text-on-surface-variant uppercase tracking-wider">Amount</th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                                Payment ID</th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                                Date</th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                                Adopter</th>
+                            <th
+                                class="px-6 py-4 text-right text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                                Amount</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y-0">
-                    {% for payment in recent_payments %}
+                        {% for payment in recent_payments %}
                         <tr class="hover:bg-surface-container-low transition-colors group">
-                            <td class="px-6 py-4 text-sm font-mono text-on-surface-variant">PAY-{{ payment.Payment_ID }}</td>
-                            <td class="px-6 py-4 text-sm font-medium text-on-surface">{{ payment.Payment_Date.strftime('%b %d, %Y') }}</td>
-                            <td class="px-6 py-4 text-sm font-semibold text-on-surface-variant">{{ payment.F_Name }} {{ payment.L_Name }}</td>
-                            <td class="px-6 py-4 text-right text-sm font-bold text-[#41608c]">{{ payment.Amount | in_rupees }}</td>
+                            <td class="px-6 py-4 text-sm font-mono text-on-surface-variant">PAY-{{ payment.Payment_ID }}
+                            </td>
+                            <td class="px-6 py-4 text-sm font-medium text-on-surface">{{
+                                payment.Payment_Date.strftime('%b %d, %Y') }}</td>
+                            <td class="px-6 py-4 text-sm font-semibold text-on-surface-variant">{{ payment.F_Name }} {{
+                                payment.L_Name }}</td>
+                            <td class="px-6 py-4 text-right text-sm font-bold text-[#41608c]">{{ payment.Amount |
+                                in_rupees }}</td>
                         </tr>
-                    {% else %}
+                        {% else %}
                         <tr>
                             <td colspan="4" class="px-6 py-8 text-center text-sm font-medium text-on-surface-variant">
                                 No payments recorded yet.
                             </td>
                         </tr>
-                    {% endfor %}
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
