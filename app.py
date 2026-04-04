@@ -420,12 +420,10 @@ def revenue_dashboard():
         recent_payments = db.session.execute(recent_payments_query).fetchall()
     except:
         total_revenue = 0
-        pending_dues = []
         recent_payments = []
          
     return render_template('revenue_dashboard.html', 
                           total_revenue=total_revenue, 
-                          pending_dues=pending_dues, 
                           recent_payments=recent_payments)
 
 @app.route('/animal/add', methods=['GET', 'POST'])
