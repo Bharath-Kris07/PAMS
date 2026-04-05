@@ -948,12 +948,8 @@ def delete_adopter(id):
     if session.get('role_name') != 'Admin': return "Unauthorized", 403
     
     try:
-        # Cascade Delete: Payments -> Returns -> Adoptions -> Adopter
-        db.session.execute(text("DELETE FROM PAYMENT WHERE Adoption_ID IN (SELECT Adoption_ID FROM ADOPTION WHERE Adopter_ID = :id)"), {'id': id})
-        db.session.execute(text("DELETE FROM AdoptionReturn WHERE Adoption_ID IN (SELECT Adoption_ID FROM ADOPTION WHERE Adopter_ID = :id)"), {'id': id})
-        db.session.execute(text("DELETE FROM ADOPTION WHERE Adopter_ID = :id"), {'id': id})
-        db.session.execute(text("DELETE FROM ADOPTER_PHONE WHERE Adopter_ID = :id"), {'id': id})
-        db.session.execute(text("DELETE FROM ADOPTER WHERE Adopter_ID = :id"), {'id': id})
+        # Cascade Delete handled by stored procedure
+        db.session.execute(text("CALL sp_delete_adopter(:id)"), {'id': id})
         
         db.session.commit()
         flash("Adopter and all associated records deleted successfully. Pets reverted to Available.", "success")
