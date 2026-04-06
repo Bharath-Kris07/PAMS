@@ -862,7 +862,6 @@ def return_adoption(id):
     date = request.form.get('return_date')
     
     try:
-        # Simplified: Single INSERT. Trigger handles Animal/Adoption status updates.
         db.session.execute(text("""
             INSERT INTO AdoptionReturn (Adoption_ID, Return_Date, Return_Reason) 
             VALUES (:id, :date, :reason)
@@ -974,8 +973,6 @@ def delete_phone(id, phone):
 def admin_logs():
     return "This section is under maintenance.", 501
 
-
-
 @app.route('/delete_image/<entity_type>/<int:entity_id>', methods=['POST'])
 def delete_image(entity_type, entity_id):
     if 'staff_id' not in session: return redirect(url_for('login'))
@@ -987,7 +984,6 @@ def delete_image(entity_type, entity_id):
     except Exception as e:
         flash(f"Error deleting image: {e}", "error")
     return redirect(request.referrer)
-
 
 @app.route('/seed_passwords')
 def seed_passwords():
