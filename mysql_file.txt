@@ -270,3 +270,42 @@ END;
 
 
 DELIMITER ;
+
+-- ==========================================
+-- 3. STORED PROCEDURE
+-- ==========================================
+
+CREATE PROCEDURE sp_delete_adopter(
+    IN p_adopter_id INT
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    DELETE FROM payment 
+    WHERE Adoption_ID IN (
+        SELECT Adoption_ID FROM adoption WHERE Adopter_ID = p_adopter_id
+    );
+
+    DELETE FROM adoptionreturn 
+    WHERE Adoption_ID IN (
+        SELECT Adoption_ID FROM adoption WHERE Adopter_ID = p_adopter_id
+    );
+
+    DELETE FROM adoption 
+    WHERE Adopter_ID = p_adopter_id;
+
+    DELETE FROM adopter_phone 
+    WHERE Adopter_ID = p_adopter_id;
+
+    DELETE FROM adopter 
+    WHERE Adopter_ID = p_adopter_id;
+
+    COMMIT;
+END;
+
