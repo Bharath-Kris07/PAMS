@@ -1,40 +1,34 @@
-
 -- ROLE TABLE
 CREATE TABLE role (
-    Role_ID INT(11) NOT NULL AUTO_INCREMENT,
+    Role_ID INT NOT NULL AUTO_INCREMENT,
     Role_Name VARCHAR(50) NOT NULL,
-    
     PRIMARY KEY (Role_ID)
 );
 
---SPECIES TABLE
+-- SPECIES TABLE
 CREATE TABLE species (
-    Species_ID INT(11) NOT NULL AUTO_INCREMENT,
+    Species_ID INT NOT NULL AUTO_INCREMENT,
     Species_Name VARCHAR(50) NOT NULL,
-    
     PRIMARY KEY (Species_ID)
 );
 
 -- STAFF TABLE
 CREATE TABLE staff (
-    Staff_ID INT(11) NOT NULL AUTO_INCREMENT,
+    Staff_ID INT NOT NULL AUTO_INCREMENT,
     F_Name VARCHAR(50) NOT NULL,
     L_Name VARCHAR(50) NOT NULL,
-    Role_ID INT(11),
-    
+    Role_ID INT,
     PRIMARY KEY (Staff_ID),
-    
     FOREIGN KEY (Role_ID) REFERENCES role(Role_ID)
 );
 
 -- ADOPTER TABLE 
 CREATE TABLE adopter (
-    Adopter_ID INT(11) NOT NULL AUTO_INCREMENT,
+    Adopter_ID INT NOT NULL AUTO_INCREMENT,
     F_Name VARCHAR(50) NOT NULL,
     L_Name VARCHAR(50) NOT NULL,
     Email VARCHAR(100) NOT NULL,
     Address VARCHAR(255),
-    
     PRIMARY KEY (Adopter_ID),
     UNIQUE (Email)
 );
@@ -42,52 +36,54 @@ CREATE TABLE adopter (
 -- ADOPTER_PHONE TABLE 
 CREATE TABLE adopter_phone (
     Phone_Number VARCHAR(15) NOT NULL,
-    Adopter_ID INT(11) NOT NULL,
-    
+    Adopter_ID INT NOT NULL,
     PRIMARY KEY (Phone_Number, Adopter_ID),
     FOREIGN KEY (Adopter_ID) REFERENCES adopter(Adopter_ID)
         ON DELETE CASCADE
 );
 
+-- BREED TABLE (moved before animal to avoid FK error)
+CREATE TABLE breed (
+    Breed_ID INT NOT NULL AUTO_INCREMENT,
+    Breed_Name VARCHAR(50) NOT NULL,
+    Species_ID INT,
+    PRIMARY KEY (Breed_ID),
+    FOREIGN KEY (Species_ID) REFERENCES species(Species_ID)
+);
+
 -- ANIMAL TABLE 
 CREATE TABLE animal (
-    Animal_ID INT(11) NOT NULL AUTO_INCREMENT,
+    Animal_ID INT NOT NULL AUTO_INCREMENT,
     Name VARCHAR(50) NOT NULL,
     Gender VARCHAR(10),
     DateOfBirth DATE,
-    Breed_ID INT(11),
-    
+    Breed_ID INT,
     PRIMARY KEY (Animal_ID),
-    
     FOREIGN KEY (Breed_ID) REFERENCES breed(Breed_ID)
 );
 
 -- MEDICAL_RECORD TABLE
 CREATE TABLE medical_record (
-    Record_ID INT(11) NOT NULL AUTO_INCREMENT,
+    Record_ID INT NOT NULL AUTO_INCREMENT,
     Treatment VARCHAR(255) NOT NULL,
     Treatment_Date DATE,
     Notes TEXT,
-    Animal_ID INT(11),
-    Staff_ID INT(11),
-    
+    Animal_ID INT,
+    Staff_ID INT,
     PRIMARY KEY (Record_ID),
-    
     FOREIGN KEY (Animal_ID) REFERENCES animal(Animal_ID),
     FOREIGN KEY (Staff_ID) REFERENCES staff(Staff_ID)
 );
 
 -- ADOPTION TABLE
 CREATE TABLE adoption (
-    Adoption_ID INT(11) NOT NULL AUTO_INCREMENT,
+    Adoption_ID INT NOT NULL AUTO_INCREMENT,
     Adoption_Date DATE NOT NULL,
     Fee DECIMAL(10,2),
-    Adopter_ID INT(11),
-    Animal_ID INT(11),
-    Staff_ID INT(11),
-    
+    Adopter_ID INT,
+    Animal_ID INT,
+    Staff_ID INT,
     PRIMARY KEY (Adoption_ID),
-    
     FOREIGN KEY (Adopter_ID) REFERENCES adopter(Adopter_ID),
     FOREIGN KEY (Animal_ID) REFERENCES animal(Animal_ID),
     FOREIGN KEY (Staff_ID) REFERENCES staff(Staff_ID)
@@ -95,217 +91,22 @@ CREATE TABLE adoption (
 
 -- ADOPTIONRETURN TABLE
 CREATE TABLE adoptionreturn (
-    Return_ID INT(11) NOT NULL AUTO_INCREMENT,
-    Adoption_ID INT(11),
+    Return_ID INT NOT NULL AUTO_INCREMENT,
+    Adoption_ID INT,
     Return_Date DATE,
     Return_Reason TEXT,
-    
     PRIMARY KEY (Return_ID),
     UNIQUE (Adoption_ID),
-    
     FOREIGN KEY (Adoption_ID) REFERENCES adoption(Adoption_ID)
         ON DELETE CASCADE
 );
 
 -- PAYMENT TABLE 
 CREATE TABLE payment (
-    Payment_ID INT(11) NOT NULL AUTO_INCREMENT,
+    Payment_ID INT NOT NULL AUTO_INCREMENT,
     Amount DECIMAL(10,2) NOT NULL,
     Payment_Date DATE NOT NULL,
-    Adoption_ID INT(11),
-    
+    Adoption_ID INT,
     PRIMARY KEY (Payment_ID),
-    
     FOREIGN KEY (Adoption_ID) REFERENCES adoption(Adoption_ID)
 );
-
--- BREED TABLE
-CREATE TABLE breed (
-    Breed_ID INT(11) NOT NULL AUTO_INCREMENT,
-    Breed_Name VARCHAR(50) NOT NULL,
-    Species_ID INT(11),
-    
-    PRIMARY KEY (Breed_ID),
-    
-    FOREIGN KEY (Species_ID) REFERENCES species(Species_ID)
-);
-
--- ==========================================
--- 2. DATABASE VIEWS
--- ==========================================
-
--- VIEW 1:
-CREATE VIEW UniversalAnimalInventoryView AS
-SELECT 
-    a.Animal_ID,
-    a.Name,
-    a.Gender,
-    a.DateOfBirth,
-    a.Breed_ID,
-    b.Breed_Name,
-    s.Species_Name,
-    CASE 
-        WHEN a.Animal_ID IN (
-            SELECT ad.Animal_ID
-            FROM adoption ad
-            LEFT JOIN adoptionreturn ar 
-                ON ad.Adoption_ID = ar.Adoption_ID
-            WHERE ar.Return_Date IS NULL
-        ) THEN 'Adopted'
-        ELSE 'Available'
-    END AS Adoption_Status
-FROM animal a
-LEFT JOIN breed b ON a.Breed_ID = b.Breed_ID
-LEFT JOIN species s ON b.Species_ID = s.Species_ID;
-
--- VIEW 2: 
-CREATE OR REPLACE VIEW AvailableAnimalsView AS
-SELECT 
-    a.Animal_ID,
-    a.Name,
-    a.Gender,
-    a.DateOfBirth,
-    'Available' AS Adoption_Status,
-    a.Breed_ID,
-    b.Breed_Name,
-    b.Species_ID,
-    s.Species_Name
-FROM ANIMAL a
-LEFT JOIN BREED b ON a.Breed_ID = b.Breed_ID
-LEFT JOIN SPECIES s ON b.Species_ID = s.Species_ID
-WHERE a.Animal_ID NOT IN (
-    SELECT ad.Animal_ID 
-    FROM ADOPTION ad 
-    LEFT JOIN AdoptionReturn ar ON ad.Adoption_ID = ar.Adoption_ID 
-    WHERE ar.Return_Date IS NULL
-);
-
---VIEW 3:
-CREATE VIEW AdoptionHistoryView AS
-SELECT 
-    a.Adoption_ID,
-    a.Animal_ID,
-    a.Adopter_ID,
-    p.Name AS Pet_Name,
-    CONCAT(u.F_Name, ' ', u.L_Name) AS Adopter_Name,
-    a.Fee,
-    ret.Return_Date,
-    CASE 
-        WHEN ret.Return_Date IS NOT NULL THEN 'Returned'
-        ELSE 'Adopted'
-    END AS Adoption_Status,
-    a.Adoption_Date
-FROM adoption a
-JOIN animal p ON a.Animal_ID = p.Animal_ID
-JOIN adopter u ON a.Adopter_ID = u.Adopter_ID
-LEFT JOIN adoptionreturn ret ON a.Adoption_ID = ret.Adoption_ID;
-
--- ==========================================
--- 3. DATABASE TRIGGERS
--- ==========================================
-
-DELIMITER //
-
--- TRIGGER 1: after_adoption_insert
-CREATE TRIGGER after_adoption_insert
-AFTER INSERT ON adoption
-FOR EACH ROW
-BEGIN
-    IF NEW.Fee > 0 THEN
-        INSERT INTO payment (Adoption_ID, Payment_Date, Amount)
-        VALUES (NEW.Adoption_ID, NEW.Adoption_Date, NEW.Fee);
-    END IF;
-END;
-
--- TRIGGER 2: after_return_insert
-CREATE TRIGGER after_return_insert
-AFTER INSERT ON adoptionreturn
-FOR EACH ROW
-BEGIN
-    DECLARE orig_fee DECIMAL(10,2);
-
-    SELECT Fee INTO orig_fee
-    FROM adoption
-    WHERE Adoption_ID = NEW.Adoption_ID;
-
-    IF orig_fee > 0 THEN
-        INSERT INTO payment (Adoption_ID, Payment_Date, Amount)
-        VALUES (NEW.Adoption_ID, NEW.Return_Date, -orig_fee);
-    END IF;
-END;
-
---TRIGGER 3: medical_record_before_insert
-CREATE TRIGGER medical_record_before_insert
-BEFORE INSERT ON medical_record
-FOR EACH ROW
-BEGIN
-    DECLARE animal_dob DATE;
-
-    SELECT DateOfBirth INTO animal_dob
-    FROM animal
-    WHERE Animal_ID = NEW.Animal_ID;
-
-    IF NEW.Treatment_Date < animal_dob THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Data Error: Treatment date cannot be earlier than the animal''s date of birth.';
-    END IF;
-END;
-
---TRIGGER 4:medical_record_before_update
-CREATE TRIGGER medical_record_before_update
-BEFORE UPDATE ON medical_record
-FOR EACH ROW
-BEGIN
-    DECLARE animal_dob DATE;
-
-    SELECT DateOfBirth INTO animal_dob
-    FROM animal
-    WHERE Animal_ID = NEW.Animal_ID;
-
-    IF NEW.Treatment_Date < animal_dob THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Data Error: Treatment date cannot be earlier than the animal''s date of birth.';
-    END IF;
-END;
-
-
-DELIMITER ;
-
--- ==========================================
--- 3. STORED PROCEDURE
--- ==========================================
-
-CREATE PROCEDURE sp_delete_adopter(
-    IN p_adopter_id INT
-)
-BEGIN
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-
-    START TRANSACTION;
-
-    DELETE FROM payment 
-    WHERE Adoption_ID IN (
-        SELECT Adoption_ID FROM adoption WHERE Adopter_ID = p_adopter_id
-    );
-
-    DELETE FROM adoptionreturn 
-    WHERE Adoption_ID IN (
-        SELECT Adoption_ID FROM adoption WHERE Adopter_ID = p_adopter_id
-    );
-
-    DELETE FROM adoption 
-    WHERE Adopter_ID = p_adopter_id;
-
-    DELETE FROM adopter_phone 
-    WHERE Adopter_ID = p_adopter_id;
-
-    DELETE FROM adopter 
-    WHERE Adopter_ID = p_adopter_id;
-
-    COMMIT;
-END;
-
