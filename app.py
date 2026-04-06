@@ -117,22 +117,17 @@ def serve_image(entity_type, entity_id):
         
     return redirect('https://placehold.co/400x400/eeeeee/a0aec0?text=No+Photo')
 @app.route('/')
+@app.route('/')
 def dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
+
     role_name = session.get('role_name')
     if role_name == 'Admin':
         return redirect(url_for('admin_dashboard'))
     elif role_name == 'Staff':
         return redirect(url_for('staff_dashboard'))
-        
-    try:
-        query = text("SELECT * FROM UniversalAnimalInventoryView WHERE Adoption_Status = 'Available'")
-        available_animals = db.session.execute(query).fetchall()
-    except Exception as e:
-        available_animals = []
-    return render_template('dashboard.html', animals=available_animals)
-
-@app.route('/admin/dashboard')
+    flash("Account error: No role assigned. Contact Admin.", "error")
+    return redirect(url_for('login'))
 @app.route('/admin/dashboard')
 def admin_dashboard():
     if 'staff_id' not in session: return redirect(url_for('login'))
